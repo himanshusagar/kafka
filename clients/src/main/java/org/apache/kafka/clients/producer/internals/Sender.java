@@ -23,12 +23,7 @@ import org.apache.kafka.clients.KafkaClient;
 import org.apache.kafka.clients.Metadata;
 import org.apache.kafka.clients.NetworkClientUtils;
 import org.apache.kafka.clients.RequestCompletionHandler;
-import org.apache.kafka.common.Cluster;
-import org.apache.kafka.common.InvalidRecordException;
-import org.apache.kafka.common.KafkaException;
-import org.apache.kafka.common.MetricName;
-import org.apache.kafka.common.Node;
-import org.apache.kafka.common.TopicPartition;
+import org.apache.kafka.common.*;
 import org.apache.kafka.common.errors.AuthenticationException;
 import org.apache.kafka.common.errors.ClusterAuthorizationException;
 import org.apache.kafka.common.errors.InvalidMetadataException;
@@ -778,19 +773,20 @@ public class Sender implements Runnable {
      * Transfer the record batches into a list of produce requests on a per-node basis
      */
     private void sendProduceRequests(Map<Integer, List<ProducerBatch>> collated, long now) {
+        Cluster cluster = metadata.fetch();
         for (Map.Entry<Integer, List<ProducerBatch>> entry : collated.entrySet())
-            sendProduceRequest(now, entry.getKey(), acks, requestTimeoutMs, entry.getValue());
+            sendProduceRequest(now, entry.getKey(), acks, requestTimeoutMs, entry.getValue(), cluster);
     }
 
     /**
      * Create a produce request from the given record batches
      */
-    private void sendProduceRequest(long now, int destination, short acks, int timeout, List<ProducerBatch> batches) {
+    private void sendProduceRequest(long now, int destination, short acks, int timeout, List<ProducerBatch> batches, Cluster cluster) {
         if (batches.isEmpty())
             return;
 
         final Map<TopicPartition, ProducerBatch> recordsByPartition = new HashMap<>(batches.size());
-
+        List <Integer> followers = new ArrayList<Integer>();
         // find the minimum magic version used when creating the record sets
         byte minUsedMagic = apiVersions.maxUsableProduceMagic();
         for (ProducerBatch batch : batches) {
@@ -800,6 +796,15 @@ public class Sender implements Runnable {
         ProduceRequestData.TopicProduceDataCollection tpd = new ProduceRequestData.TopicProduceDataCollection();
         for (ProducerBatch batch : batches) {
             TopicPartition tp = batch.topicPartition;
+            /**
+                Get partition info to fetch all follower node
+                information.
+             */
+            PartitionInfo partitionInfo = cluster.partition(tp);
+            for (Node follower: partitionInfo.replicas()){
+                followers.add(follower.id());
+                log.info("[Producer Log]Topic: %s, follower: %s", partitionInfo.topic(), follower.host());
+            }
             MemoryRecords records = batch.records();
 
             // down convert if necessary to the minimum magic used. In general, there can be a delay between the time
@@ -840,6 +845,14 @@ public class Sender implements Runnable {
                 requestTimeoutMs, callback);
         client.send(clientRequest, now);
         log.trace("Sent produce request to {}: {}", nodeId, requestBuilder);
+        /**
+            Finished pushing to Leader, now push to all followers.
+         */
+        for (Integer followerID: followers){
+            ClientRequest clientRequestFollower = client.newClientRequest(Integer.toString(followerID), requestBuilder, now, acks != 0,
+                    requestTimeoutMs, callback);
+            client.send(clientRequestFollower, now);
+        }
     }
 
     /**
