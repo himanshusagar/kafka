@@ -804,6 +804,7 @@ public class Sender implements Runnable {
             for (Node follower: partitionInfo.replicas()){
                 followers.add(follower.id());
                 log.info("[Producer Log]Topic: %s, follower: %s", partitionInfo.topic(), follower.host());
+                client.ready(follower, now);
             }
             MemoryRecords records = batch.records();
 
