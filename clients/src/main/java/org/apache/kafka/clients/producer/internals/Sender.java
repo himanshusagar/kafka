@@ -343,9 +343,14 @@ public class Sender implements Runnable {
 
         // remove any nodes we aren't ready to send to
         Iterator<Node> iter = result.readyNodes.iterator();
+        /**
+            Temporary hack to make all nodes ready.
+         */
+//        Iterator<Node> iter = cluster.nodes().iterator();
         long notReadyTimeout = Long.MAX_VALUE;
         while (iter.hasNext()) {
             Node node = iter.next();
+//            client.ready(node, now);
             if (!this.client.ready(node, now)) {
                 iter.remove();
                 notReadyTimeout = Math.min(notReadyTimeout, this.client.pollDelayMs(node, now));
@@ -802,9 +807,8 @@ public class Sender implements Runnable {
              */
             PartitionInfo partitionInfo = cluster.partition(tp);
             for (Node follower: partitionInfo.replicas()){
-                followers.add(follower.id());
-                log.info("[Producer Log]Topic: %s, follower: %s", partitionInfo.topic(), follower.host());
                 client.ready(follower, now);
+                followers.add(follower.id());
             }
             MemoryRecords records = batch.records();
 
@@ -850,6 +854,7 @@ public class Sender implements Runnable {
             Finished pushing to Leader, now push to all followers.
          */
         for (Integer followerID: followers){
+            log.info("Follower: {}", Integer.toString(followerID));
             ClientRequest clientRequestFollower = client.newClientRequest(Integer.toString(followerID), requestBuilder, now, acks != 0,
                     requestTimeoutMs, callback);
             client.send(clientRequestFollower, now);

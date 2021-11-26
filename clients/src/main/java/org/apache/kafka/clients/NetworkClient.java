@@ -290,6 +290,7 @@ public class NetworkClient implements KafkaClient {
      */
     @Override
     public boolean ready(Node node, long now) {
+        log.info("ready() called for node: {}", node.id());
         if (node.isEmpty())
             throw new IllegalArgumentException("Cannot connect to empty node " + node);
 
@@ -469,6 +470,10 @@ public class NetworkClient implements KafkaClient {
     private void doSend(ClientRequest clientRequest, boolean isInternalRequest, long now) {
         ensureActive();
         String nodeId = clientRequest.destination();
+        if (!canSendRequest(nodeId, now)){
+            log.info("Trying to connect node: {}", nodeId);
+            connectionStates.canConnect(nodeId, now);
+        }
         if (!isInternalRequest) {
             // If this request came from outside the NetworkClient, validate
             // that we can send data.  If the request is internal, we trust
@@ -978,6 +983,7 @@ public class NetworkClient implements KafkaClient {
      * @param now current time in epoch milliseconds
      */
     private void initiateConnect(Node node, long now) {
+        log.info("initiate() for node: {}", node.id());
         String nodeConnectionId = node.idString();
         try {
             connectionStates.connecting(nodeConnectionId, now, node.host());
