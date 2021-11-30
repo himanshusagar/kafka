@@ -76,6 +76,7 @@ final class ClusterConnectionStates {
      */
     public boolean canConnect(String id, long now) {
         NodeConnectionState state = nodeState.get(id);
+//        log.info("State: {}", state.toString());
         if (state == null)
             return true;
         else
