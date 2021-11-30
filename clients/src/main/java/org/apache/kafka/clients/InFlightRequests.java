@@ -175,7 +175,8 @@ final class InFlightRequests {
         for (Map.Entry<String, Deque<NetworkClient.InFlightRequest>> requestEntry : requests.entrySet()) {
             String nodeId = requestEntry.getKey();
             Deque<NetworkClient.InFlightRequest> deque = requestEntry.getValue();
-            if (hasExpiredRequest(now, deque))
+            //hsagar
+            if (false && hasExpiredRequest(now, deque))
                 nodeIds.add(nodeId);
         }
         return nodeIds;

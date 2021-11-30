@@ -116,6 +116,15 @@ class ReplicaFetcherThread(name: String,
     replicaMgr.localLogOrException(topicPartition).latestEpoch
   }
 
+  override def doWork(): Unit = {
+    //Empty for followers
+    //hsagar
+    val a = 1;
+    val b = 1;
+    var c = a + b;
+    c = a * c;
+  }
+
   override protected def logStartOffset(topicPartition: TopicPartition): Long = {
     replicaMgr.localLogOrException(topicPartition).logStartOffset
   }

@@ -455,11 +455,24 @@ public final class RecordAccumulator {
                 if (batch != null) {
                     TopicPartition part = entry.getKey();
                     Node leader = cluster.leaderFor(part);
+
+                    PartitionInfo infoForAll = cluster.partitionsByTopicPartition.get(part);
+
+                    int a = 0;
+                    for (Node follower : infoForAll.replicas())
+                    {
+                        readyNodes.add(follower);
+                        a++;
+                    }
+
                     if (leader == null) {
                         // This is a partition for which leader is not known, but messages are available to send.
                         // Note that entries are currently not removed from batches when deque is empty.
                         unknownLeaderTopics.add(part.topic());
-                    } else if (!readyNodes.contains(leader) && !isMuted(part)) {
+                    } else if (
+                            //!readyNodes.contains(leader) &&
+                            // hsagar
+                            !isMuted(part)) {
                         long waitedTimeMs = batch.waitedTimeMs(nowMs);
                         boolean backingOff = batch.attempts() > 0 && waitedTimeMs < retryBackoffMs;
                         long timeToWaitMs = backingOff ? retryBackoffMs : lingerMs;
@@ -543,6 +556,9 @@ public final class RecordAccumulator {
     private List<ProducerBatch> drainBatchesForOneNode(Cluster cluster, Node node, int maxSize, long now) {
         int size = 0;
         List<PartitionInfo> parts = cluster.partitionsForNode(node.id());
+        //hsagar
+        //List<PartitionInfo> parts = cluster.partitionsForTopic("test2");
+
         List<ProducerBatch> ready = new ArrayList<>();
         /* to make starvation less likely this loop doesn't start at 0 */
         int start = drainIndex = drainIndex % parts.size();
@@ -634,6 +650,99 @@ public final class RecordAccumulator {
         Map<Integer, List<ProducerBatch>> batches = new HashMap<>();
         for (Node node : nodes) {
             List<ProducerBatch> ready = drainBatchesForOneNode(cluster, node, maxSize, now);
+            batches.put(node.id(), ready);
+        }
+        return batches;
+    }
+
+
+    private List<ProducerBatch> drainBatchesForOneNodeAkshat(Cluster cluster, Node node, int maxSize, long now) {
+        int size = 0;
+        //List<PartitionInfo> partsOld = cluster.partitionsForNode(node.id());
+        //hsagar
+        List<PartitionInfo> parts = cluster.partitionsForTopic("test3");
+
+        List<ProducerBatch> ready = new ArrayList<>();
+        /* to make starvation less likely this loop doesn't start at 0 */
+        int start = drainIndex = drainIndex % parts.size();
+        do {
+            PartitionInfo part = parts.get(drainIndex);
+            TopicPartition tp = new TopicPartition(part.topic(), part.partition());
+            this.drainIndex = (this.drainIndex + 1) % parts.size();
+
+            // Only proceed if the partition has no in-flight batches.
+            if (isMuted(tp))
+                continue;
+
+            Deque<ProducerBatch> deque = getDeque(tp);
+            if (deque == null)
+                continue;
+
+            synchronized (deque) {
+                // invariant: !isMuted(tp,now) && deque != null
+                ProducerBatch first = deque.peekFirst();
+                if (first == null)
+                    continue;
+
+                // first != null
+                boolean backoff = first.attempts() > 0 && first.waitedTimeMs(now) < retryBackoffMs;
+                // Only drain the batch if it is not during backoff period.
+                if (backoff)
+                    continue;
+
+                if (size + first.estimatedSizeInBytes() > maxSize && !ready.isEmpty()) {
+                    // there is a rare case that a single batch size is larger than the request size due to
+                    // compression; in this case we will still eventually send this batch in a single request
+                    break;
+                } else {
+                    if (shouldStopDrainBatchesForPartition(first, tp))
+                        break;
+
+                    boolean isTransactional = transactionManager != null && transactionManager.isTransactional();
+                    ProducerIdAndEpoch producerIdAndEpoch =
+                            transactionManager != null ? transactionManager.producerIdAndEpoch() : null;
+                    ProducerBatch batch = deque.pollFirst();
+                    if (producerIdAndEpoch != null && !batch.hasSequence()) {
+                        // If the producer id/epoch of the partition do not match the latest one
+                        // of the producer, we update it and reset the sequence. This should be
+                        // only done when all its in-flight batches have completed. This is guarantee
+                        // in `shouldStopDrainBatchesForPartition`.
+                        transactionManager.maybeUpdateProducerIdAndEpoch(batch.topicPartition);
+
+                        // If the batch already has an assigned sequence, then we should not change the producer id and
+                        // sequence number, since this may introduce duplicates. In particular, the previous attempt
+                        // may actually have been accepted, and if we change the producer id and sequence here, this
+                        // attempt will also be accepted, causing a duplicate.
+                        //
+                        // Additionally, we update the next sequence number bound for the partition, and also have
+                        // the transaction manager track the batch so as to ensure that sequence ordering is maintained
+                        // even if we receive out of order responses.
+                        batch.setProducerState(producerIdAndEpoch, transactionManager.sequenceNumber(batch.topicPartition), isTransactional);
+                        transactionManager.incrementSequenceNumber(batch.topicPartition, batch.recordCount);
+                        log.debug("Assigned producerId {} and producerEpoch {} to batch with base sequence " +
+                                        "{} being sent to partition {}", producerIdAndEpoch.producerId,
+                                producerIdAndEpoch.epoch, batch.baseSequence(), tp);
+
+                        transactionManager.addInFlightBatch(batch);
+                    }
+                    batch.close();
+                    size += batch.records().sizeInBytes();
+                    ready.add(batch);
+
+                    batch.drained(now);
+                }
+            }
+        } while (start != drainIndex);
+        return ready;
+    }
+
+    public Map<Integer, List<ProducerBatch>> drainAkshat(Cluster cluster, Set<Node> nodes, int maxSize, long now) {
+        if (nodes.isEmpty())
+            return Collections.emptyMap();
+
+        Map<Integer, List<ProducerBatch>> batches = new HashMap<>();
+        for (Node node : nodes) {
+            List<ProducerBatch> ready = drainBatchesForOneNodeAkshat(cluster, node, maxSize, now);
             batches.put(node.id(), ready);
         }
         return batches;

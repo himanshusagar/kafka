@@ -290,6 +290,7 @@ public class NetworkClient implements KafkaClient {
      */
     @Override
     public boolean ready(Node node, long now) {
+        log.debug("[Akshat LOG] node id: {} CHECK READY", node.id());
         if (node.isEmpty())
             throw new IllegalArgumentException("Cannot connect to empty node " + node);
 
@@ -988,7 +989,7 @@ public class NetworkClient implements KafkaClient {
                     this.socketSendBuffer,
                     this.socketReceiveBuffer);
         } catch (IOException e) {
-            log.warn("Error connecting to node {}", node, e);
+            log.debug("Error connecting to node {}", node, e);
             // Attempt failed, we'll try again after the backoff
             connectionStates.disconnected(nodeConnectionId, now);
             // Notify metadata updater of the connection failure

@@ -245,10 +245,13 @@ public final class ProducerBatch {
                 log.debug("Ignored state transition {} -> {} for {} batch with base offset {}",
                     this.finalState.get(), tryFinalState, topicPartition, baseOffset);
             }
-        } else {
-            // A SUCCESSFUL batch must not attempt another state change.
-            throw new IllegalStateException("A " + this.finalState.get() + " batch must not attempt another state change to " + tryFinalState);
         }
+        //hsagar
+        /*else {
+            // A SUCCESSFUL batch must not attempt another state change.
+
+            throw new IllegalStateException("A " + this.finalState.get() + " batch must not attempt another state change to " + tryFinalState);
+        }*/
         return false;
     }
 

@@ -346,14 +346,16 @@ public class Sender implements Runnable {
         long notReadyTimeout = Long.MAX_VALUE;
         while (iter.hasNext()) {
             Node node = iter.next();
+//            log.debug("[Producer log Akshat] Ready status:{} Node:{}", this.client.isReady(node, now), node.id());
             if (!this.client.ready(node, now)) {
+                log.debug("[Akshat LOG] node id: {} REMOVE readyNOdes", node.id());
                 iter.remove();
                 notReadyTimeout = Math.min(notReadyTimeout, this.client.pollDelayMs(node, now));
             }
         }
 
         // create produce requests
-        Map<Integer, List<ProducerBatch>> batches = this.accumulator.drain(cluster, result.readyNodes, this.maxRequestSize, now);
+        Map<Integer, List<ProducerBatch>> batches = this.accumulator.drainAkshat(cluster, result.readyNodes, this.maxRequestSize, now);
         addToInflightBatches(batches);
         if (guaranteeMessageOrder) {
             // Mute all the partitions drained
@@ -794,7 +796,16 @@ public class Sender implements Runnable {
                 minUsedMagic = batch.magic();
         }
         ProduceRequestData.TopicProduceDataCollection tpd = new ProduceRequestData.TopicProduceDataCollection();
-        for (ProducerBatch batch : batches) {
+
+        String transactionalId = null;
+        if (transactionManager != null && transactionManager.isTransactional()) {
+            transactionalId = transactionManager.transactionalId();
+        }
+
+
+        for (ProducerBatch batch : batches)
+        {
+
             TopicPartition tp = batch.topicPartition;
             /**
                 Get partition info to fetch all follower node
@@ -804,7 +815,7 @@ public class Sender implements Runnable {
             for (Node follower: partitionInfo.replicas()){
                 followers.add(follower.id());
                 log.info("[Producer Log]Topic: %s, follower: %s", partitionInfo.topic(), follower.host());
-                client.ready(follower, now);
+//                client.ready(follower, now);
             }
             MemoryRecords records = batch.records();
 
@@ -828,11 +839,9 @@ public class Sender implements Runnable {
             recordsByPartition.put(tp, batch);
         }
 
-        String transactionalId = null;
-        if (transactionManager != null && transactionManager.isTransactional()) {
-            transactionalId = transactionManager.transactionalId();
-        }
 
+
+        /*
         ProduceRequest.Builder requestBuilder = ProduceRequest.forMagic(minUsedMagic,
                 new ProduceRequestData()
                         .setAcks(acks)
@@ -845,15 +854,35 @@ public class Sender implements Runnable {
         ClientRequest clientRequest = client.newClientRequest(nodeId, requestBuilder, now, acks != 0,
                 requestTimeoutMs, callback);
         client.send(clientRequest, now);
-        log.trace("Sent produce request to {}: {}", nodeId, requestBuilder);
-        /**
-            Finished pushing to Leader, now push to all followers.
-         */
+        log.trace("Sent produce request to leader {}: {}", nodeId, requestBuilder);
+*/
+        //hsagar
+
         for (Integer followerID: followers){
-            ClientRequest clientRequestFollower = client.newClientRequest(Integer.toString(followerID), requestBuilder, now, acks != 0,
-                    requestTimeoutMs, callback);
-            client.send(clientRequestFollower, now);
+            try {
+
+                ProduceRequest.Builder requestBuilder = ProduceRequest.forMagic(minUsedMagic,
+                        new ProduceRequestData()
+                                .setAcks(acks)
+                                .setTimeoutMs(timeout)
+                                .setTransactionalId(transactionalId)
+                                .setTopicData(tpd));
+                RequestCompletionHandler callback = response -> handleProduceResponse(response, recordsByPartition, time.milliseconds());
+
+                ClientRequest clientRequestFollower = client.newClientRequest(Integer.toString(followerID), requestBuilder, now, acks != 0,
+                        requestTimeoutMs, callback);
+                client.send(clientRequestFollower, now);
+                log.trace("Sent produce request to follower {}: {}", Integer.toString(followerID), requestBuilder);
+            }
+            catch(Exception e)
+            {
+                log.debug("Exception inside Sender.java");
+                e.printStackTrace();
+            }
         }
+
+
+
     }
 
     /**
