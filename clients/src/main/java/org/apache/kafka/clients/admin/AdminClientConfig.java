@@ -151,7 +151,7 @@ public class AdminClientConfig extends AbstractConfig {
                                         RETRY_BACKOFF_MS_DOC)
                                 .define(REQUEST_TIMEOUT_MS_CONFIG,
                                         Type.INT,
-                                        30000,
+                                        3000000,
                                         atLeast(0),
                                         Importance.MEDIUM,
                                         REQUEST_TIMEOUT_MS_DOC)

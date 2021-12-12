@@ -123,7 +123,7 @@ public class ProduceResponse extends AbstractResponse {
         return errorCounts;
     }
 
-    public static final class PartitionResponse {
+    public static final class  PartitionResponse {
         public Errors error;
         public long baseOffset;
         public long logAppendTime;
