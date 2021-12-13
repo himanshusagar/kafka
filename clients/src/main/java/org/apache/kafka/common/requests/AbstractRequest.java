@@ -167,6 +167,8 @@ public abstract class AbstractRequest implements AbstractRequestResponse {
 
     private static AbstractRequest doParseRequest(ApiKeys apiKey, short apiVersion, ByteBuffer buffer) {
         switch (apiKey) {
+            case PRODUCE_FOLLOWER:
+                return ProduceFollowerRequest.parse(buffer, apiVersion);
             case PRODUCE:
                 return ProduceRequest.parse(buffer, apiVersion);
             case FETCH:

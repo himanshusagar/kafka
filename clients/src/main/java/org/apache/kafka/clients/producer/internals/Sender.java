@@ -32,6 +32,7 @@ import org.apache.kafka.common.errors.TimeoutException;
 import org.apache.kafka.common.errors.TopicAuthorizationException;
 import org.apache.kafka.common.errors.TransactionAbortedException;
 import org.apache.kafka.common.errors.UnknownTopicOrPartitionException;
+import org.apache.kafka.common.message.ProduceFollowerRequestData;
 import org.apache.kafka.common.message.ProduceRequestData;
 import org.apache.kafka.common.metrics.Sensor;
 import org.apache.kafka.common.metrics.stats.Avg;
@@ -40,11 +41,7 @@ import org.apache.kafka.common.metrics.stats.Meter;
 import org.apache.kafka.common.protocol.Errors;
 import org.apache.kafka.common.record.MemoryRecords;
 import org.apache.kafka.common.record.RecordBatch;
-import org.apache.kafka.common.requests.AbstractRequest;
-import org.apache.kafka.common.requests.FindCoordinatorRequest;
-import org.apache.kafka.common.requests.ProduceRequest;
-import org.apache.kafka.common.requests.ProduceResponse;
-import org.apache.kafka.common.requests.RequestHeader;
+import org.apache.kafka.common.requests.*;
 import org.apache.kafka.common.utils.LogContext;
 import org.apache.kafka.common.utils.Time;
 import org.slf4j.Logger;
@@ -535,6 +532,12 @@ public class Sender implements Runnable {
     /**
      * Handle a produce response
      */
+
+    private static boolean checkIsClass(Object obj, String c) throws ClassNotFoundException
+    {
+        return Class.forName(c).isInstance(obj);
+    }
+
     private void handleProduceResponse(ClientResponse response, Map<TopicPartition, ProducerBatch> batches, long now) {
         RequestHeader requestHeader = response.requestHeader();
         int correlationId = requestHeader.correlationId();
@@ -570,6 +573,54 @@ public class Sender implements Runnable {
                             p.errorMessage());
                     ProducerBatch batch = batches.get(tp);
                     completeBatch(batch, partResp, correlationId, now);
+                }));
+                this.sensors.recordLatency(response.destination(), response.requestLatencyMs());
+            } else {
+                // this is the acks = 0 case, just complete all requests
+                for (ProducerBatch batch : batches.values()) {
+                    completeBatch(batch, new ProduceResponse.PartitionResponse(Errors.NONE), correlationId, now);
+                }
+            }
+        }
+    }
+    /**
+     * Handle a follower produce response
+     */
+    private void handleFollowerProduceResponse(ClientResponse response, Map<TopicPartition, ProducerBatch> batches, long now) {
+        RequestHeader requestHeader = response.requestHeader();
+        int correlationId = requestHeader.correlationId();
+        if (response.wasDisconnected()) {
+            log.trace("Cancelled request with header {} due to node {} being disconnected",
+                    requestHeader, response.destination());
+            for (ProducerBatch batch : batches.values()) {
+                completeBatch(batch, new ProduceResponse.PartitionResponse(Errors.NETWORK_EXCEPTION, String.format("Disconnected from node %s", response.destination())),
+                        correlationId, now);
+            }
+        } else if (response.versionMismatch() != null) {
+            log.warn("Cancelled request {} due to a version mismatch with node {}",
+                    response, response.destination(), response.versionMismatch());
+            for (ProducerBatch batch : batches.values())
+                completeBatch(batch, new ProduceResponse.PartitionResponse(Errors.UNSUPPORTED_VERSION), correlationId, now);
+        } else {
+            log.trace("Received produce response from node {} with correlation id {}", response.destination(), correlationId);
+            // if we have a response, parse it
+            if (response.hasResponse()) {
+                // Sender should exercise PartitionProduceResponse rather than ProduceResponse.PartitionResponse
+                // https://issues.apache.org/jira/browse/KAFKA-10696
+                ProduceFollowerResponse produceResponse = (ProduceFollowerResponse) response.responseBody();
+                produceResponse.data().responses().forEach(r -> r.partitionResponses().forEach(p -> {
+                    TopicPartition tp = new TopicPartition(r.name(), p.index());
+                    ProduceResponse.PartitionResponse partResp = new ProduceResponse.PartitionResponse(
+                            Errors.forCode(p.errorCode()),
+                            p.baseOffset(),
+                            p.logAppendTimeMs(),
+                            p.logStartOffset(),
+                            p.recordErrors()
+                                    .stream()
+                                    .map(e -> new ProduceResponse.RecordError(e.batchIndex(), e.batchIndexErrorMessage()))
+                                    .collect(Collectors.toList()),
+                            p.errorMessage());
+                    ProducerBatch batch = batches.get(tp);
                 }));
                 this.sensors.recordLatency(response.destination(), response.requestLatencyMs());
             } else {
@@ -650,6 +701,7 @@ public class Sender implements Runnable {
         if (guaranteeMessageOrder)
             this.accumulator.unmutePartition(batch.topicPartition);
     }
+
 
     /**
      * Format the error from a {@link ProduceResponse.PartitionResponse} in a user-friendly string
@@ -786,7 +838,7 @@ public class Sender implements Runnable {
     private void sendProduceRequest(long now, int destination, short acks, int timeout, List<ProducerBatch> batches, Cluster cluster) {
         if (batches.isEmpty())
             return;
-
+        int leaderID = 0;
         final Map<TopicPartition, ProducerBatch> recordsByPartition = new HashMap<>(batches.size());
         List <Integer> followers = new ArrayList<Integer>();
         // find the minimum magic version used when creating the record sets
@@ -796,6 +848,7 @@ public class Sender implements Runnable {
                 minUsedMagic = batch.magic();
         }
         ProduceRequestData.TopicProduceDataCollection tpd = new ProduceRequestData.TopicProduceDataCollection();
+        ProduceFollowerRequestData.TopicProduceDataCollection tpd2 = new ProduceFollowerRequestData.TopicProduceDataCollection();
 
         String transactionalId = null;
         if (transactionManager != null && transactionManager.isTransactional()) {
@@ -813,6 +866,10 @@ public class Sender implements Runnable {
              */
             PartitionInfo partitionInfo = cluster.partition(tp);
             for (Node follower: partitionInfo.replicas()){
+                // Get leader id
+                if (partitionInfo.leader() == follower){
+                    leaderID = follower.id();
+                }
                 followers.add(follower.id());
                 log.info("[Producer Log]Topic: %s, follower: %s", partitionInfo.topic(), follower.host());
 //                client.ready(follower, now);
@@ -828,14 +885,26 @@ public class Sender implements Runnable {
             // which is supporting the new magic version to one which doesn't, then we will need to convert.
             if (!records.hasMatchingMagic(minUsedMagic))
                 records = batch.records().downConvert(minUsedMagic, 0, time).records();
+
+            ProduceFollowerRequestData.TopicProduceData tpData2 = tpd2.find(tp.topic());
             ProduceRequestData.TopicProduceData tpData = tpd.find(tp.topic());
+
             if (tpData == null) {
                 tpData = new ProduceRequestData.TopicProduceData().setName(tp.topic());
                 tpd.add(tpData);
             }
+            if (tpData2 == null) {
+                tpData2 = new ProduceFollowerRequestData.TopicProduceData().setName(tp.topic());
+                tpd2.add(tpData2);
+            }
+
             tpData.partitionData().add(new ProduceRequestData.PartitionProduceData()
                     .setIndex(tp.partition())
                     .setRecords(records));
+            tpData2.partitionData().add(new ProduceFollowerRequestData.PartitionProduceData()
+                    .setIndex(tp.partition())
+                    .setRecords(records));
+
             recordsByPartition.put(tp, batch);
         }
 
@@ -860,19 +929,41 @@ public class Sender implements Runnable {
 
         for (Integer followerID: followers){
             try {
+                if (followerID != leaderID){
+                    //akshatgit
+                    //Creating different request for followers
+                    ProduceFollowerRequest.Builder requestBuilder = ProduceFollowerRequest.forMagic(minUsedMagic,
+                            new ProduceFollowerRequestData()
+                                    .setAcks(acks)
+                                    .setTimeoutMs(timeout)
+                                    .setTransactionalId(transactionalId)
+                                    .setTopicData(tpd2));
 
-                ProduceRequest.Builder requestBuilder = ProduceRequest.forMagic(minUsedMagic,
-                        new ProduceRequestData()
-                                .setAcks(acks)
-                                .setTimeoutMs(timeout)
-                                .setTransactionalId(transactionalId)
-                                .setTopicData(tpd));
-                RequestCompletionHandler callback = response -> handleProduceResponse(response, recordsByPartition, time.milliseconds());
+                    RequestCompletionHandler callback = response -> handleFollowerProduceResponse(response, recordsByPartition, time.milliseconds());
 
-                ClientRequest clientRequestFollower = client.newClientRequest(Integer.toString(followerID), requestBuilder, now, acks != 0,
-                        requestTimeoutMs, callback);
-                client.send(clientRequestFollower, now);
-                log.trace("Sent produce request to follower {}: {}", Integer.toString(followerID), requestBuilder);
+                    ClientRequest clientRequestFollower = client.newClientRequest(Integer.toString(followerID), requestBuilder, now, acks != 0,
+                            requestTimeoutMs, callback);
+                    client.send(clientRequestFollower, now);
+                    log.trace("Sent produce request to followers {}: {}", Integer.toString(followerID), requestBuilder);
+                }
+                else
+                {
+                    //akshatgit
+                    //Creating request for leader
+                    ProduceRequest.Builder requestBuilder = ProduceRequest.forMagic(minUsedMagic,
+                            new ProduceRequestData()
+                                    .setAcks(acks)
+                                    .setTimeoutMs(timeout)
+                                    .setTransactionalId(transactionalId)
+                                    .setTopicData(tpd));
+
+                    RequestCompletionHandler callback = response -> handleProduceResponse(response, recordsByPartition, time.milliseconds());
+
+                    ClientRequest clientRequestFollower = client.newClientRequest(Integer.toString(followerID), requestBuilder, now, acks != 0,
+                            requestTimeoutMs, callback);
+                    client.send(clientRequestFollower, now);
+                    log.trace("Sent produce request to leader {}: {}", Integer.toString(followerID), requestBuilder);
+                }
             }
             catch(Exception e)
             {

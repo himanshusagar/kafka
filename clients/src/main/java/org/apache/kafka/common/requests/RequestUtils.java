@@ -16,6 +16,7 @@
  */
 package org.apache.kafka.common.requests;
 
+import org.apache.kafka.common.message.ProduceFollowerRequestData;
 import org.apache.kafka.common.message.ProduceRequestData;
 import org.apache.kafka.common.protocol.ByteBufferAccessor;
 import org.apache.kafka.common.protocol.Message;
@@ -41,6 +42,11 @@ public final class RequestUtils {
         return flag(request, RecordBatch::isTransactional);
     }
 
+    public static boolean hasTransactionalRecords(ProduceFollowerRequest request) {
+        return flag(request, RecordBatch::isTransactional);
+    }
+
+
     /**
      * find a flag from all records of a produce request.
      * @param request produce request
@@ -50,6 +56,18 @@ public final class RequestUtils {
     static boolean flag(ProduceRequest request, Predicate<RecordBatch> predicate) {
         for (ProduceRequestData.TopicProduceData tp : request.data().topicData()) {
             for (ProduceRequestData.PartitionProduceData p : tp.partitionData()) {
+                if (p.records() instanceof Records) {
+                    Iterator<? extends RecordBatch> iter = (((Records) p.records())).batchIterator();
+                    if (iter.hasNext() && predicate.test(iter.next())) return true;
+                }
+            }
+        }
+        return false;
+    }
+
+    static boolean flag(ProduceFollowerRequest request, Predicate<RecordBatch> predicate) {
+        for (ProduceFollowerRequestData.TopicProduceData tp : request.data().topicData()) {
+            for (ProduceFollowerRequestData.PartitionProduceData p : tp.partitionData()) {
                 if (p.records() instanceof Records) {
                     Iterator<? extends RecordBatch> iter = (((Records) p.records())).batchIterator();
                     if (iter.hasNext() && predicate.test(iter.next())) return true;
