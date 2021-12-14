@@ -6,19 +6,11 @@ import java.util.HashMap;
 
 public class OrderedMessageMap
 {
-    //private stuff
     private HashMap<TopicPartition , HashMap<ProducerIdAndEpoch , MemoryRecords> > hMap;
-    private static OrderedMessageMap single_instance = null;
+
     public OrderedMessageMap()
     {
         hMap = new HashMap<>();
-    }
-    //public stuff
-    public static OrderedMessageMap getInstance()
-    {
-        if (single_instance == null)
-            single_instance = new OrderedMessageMap();
-        return single_instance;
     }
     public boolean inMap(TopicPartition key)
     {

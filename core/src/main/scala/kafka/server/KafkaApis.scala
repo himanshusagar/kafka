@@ -562,12 +562,11 @@ class KafkaApis(val requestChannel: RequestChannel,
       // We cast the type to avoid causing big change to code base.
       // https://issues.apache.org/jira/browse/KAFKA-10698
       val memoryRecords = partition.records.asInstanceOf[MemoryRecords]
-      val hMap = new OrderedMessageMap
       memoryRecords.batches.forEach{ batch =>
         // akshatgit black magic
 
         if (batch.hasProducerId){
-          hMap.put(topicPartition, new ProducerIdAndEpoch(batch.producerId(), batch.producerEpoch()), memoryRecords)
+          OrderedMessageMapSingleton.hMap.put(topicPartition, new ProducerIdAndEpoch(batch.producerId(), batch.producerEpoch()), memoryRecords)
         }
       }
 //      if (!authorizedTopics.contains(topicPartition.topic))
@@ -706,6 +705,13 @@ class KafkaApis(val requestChannel: RequestChannel,
       // We cast the type to avoid causing big change to code base.
       // https://issues.apache.org/jira/browse/KAFKA-10698
       val memoryRecords = partition.records.asInstanceOf[MemoryRecords]
+
+      memoryRecords.batches.forEach{ batch =>
+        if (batch.hasProducerId){
+          OrderedListMapSingleton.hMap.put(topicPartition, new ProducerIdAndEpoch(batch.producerId(), batch.producerEpoch()) )
+        }
+      }
+
       if (!authorizedTopics.contains(topicPartition.topic))
         unauthorizedTopicResponses += topicPartition -> new PartitionResponse(Errors.TOPIC_AUTHORIZATION_FAILED)
       else if (!metadataCache.contains(topicPartition))
