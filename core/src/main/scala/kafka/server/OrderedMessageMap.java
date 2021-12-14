@@ -9,7 +9,7 @@ public class OrderedMessageMap
     //private stuff
     private HashMap<TopicPartition , HashMap<ProducerIdAndEpoch , MemoryRecords> > hMap;
     private static OrderedMessageMap single_instance = null;
-    private OrderedMessageMap()
+    public OrderedMessageMap()
     {
         hMap = new HashMap<>();
     }
@@ -30,7 +30,7 @@ public class OrderedMessageMap
         {
             return hMap.get(key).get(producerIdAndEpoch);
         }
-        return null;
+        return MemoryRecords.EMPTY;
     }
     public void put(TopicPartition key, ProducerIdAndEpoch producerIdAndEpoch , MemoryRecords message)
     {

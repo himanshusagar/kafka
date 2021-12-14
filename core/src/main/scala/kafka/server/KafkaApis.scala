@@ -536,8 +536,6 @@ class KafkaApis(val requestChannel: RequestChannel,
    */
   def handleProduceFollowerRequest(request: RequestChannel.Request, requestLocal: RequestLocal): Unit = {
     info("[Akshat]From follower produce handler")
-
-
     val produceRequest = request.body[ProduceFollowerRequest]
     val requestSize = request.sizeInBytes
 
@@ -555,8 +553,8 @@ class KafkaApis(val requestChannel: RequestChannel,
     val invalidRequestResponses = mutable.Map[TopicPartition, PartitionResponse]()
     val authorizedRequestInfo = mutable.Map[TopicPartition, MemoryRecords]()
     // cache the result to avoid redundant authorization calls
-    val authorizedTopics = authHelper.filterByAuthorized(request.context, WRITE, TOPIC,
-      produceRequest.data().topicData().asScala)(_.name())
+//    val authorizedTopics = authHelper.filterByAuthorized(request.context, WRITE, TOPIC,
+//      produceRequest.data().topicData().asScala)(_.name())
 
     produceRequest.data.topicData.forEach(topic => topic.partitionData.forEach { partition =>
       val topicPartition = new TopicPartition(topic.name, partition.index)
@@ -564,18 +562,26 @@ class KafkaApis(val requestChannel: RequestChannel,
       // We cast the type to avoid causing big change to code base.
       // https://issues.apache.org/jira/browse/KAFKA-10698
       val memoryRecords = partition.records.asInstanceOf[MemoryRecords]
-      if (!authorizedTopics.contains(topicPartition.topic))
-        unauthorizedTopicResponses += topicPartition -> new PartitionResponse(Errors.TOPIC_AUTHORIZATION_FAILED)
-      else if (!metadataCache.contains(topicPartition))
-        nonExistingTopicResponses += topicPartition -> new PartitionResponse(Errors.UNKNOWN_TOPIC_OR_PARTITION)
-      else
-        try {
-          ProduceRequest.validateRecords(request.header.apiVersion, memoryRecords)
-          authorizedRequestInfo += (topicPartition -> memoryRecords)
-        } catch {
-          case e: ApiException =>
-            invalidRequestResponses += topicPartition -> new PartitionResponse(Errors.forException(e))
+      val hMap = new OrderedMessageMap
+      memoryRecords.batches.forEach{ batch =>
+        // akshatgit black magic
+
+        if (batch.hasProducerId){
+          hMap.put(topicPartition, new ProducerIdAndEpoch(batch.producerId(), batch.producerEpoch()), memoryRecords)
         }
+      }
+//      if (!authorizedTopics.contains(topicPartition.topic))
+//        unauthorizedTopicResponses += topicPartition -> new PartitionResponse(Errors.TOPIC_AUTHORIZATION_FAILED)
+//      else if (!metadataCache.contains(topicPartition))
+//        nonExistingTopicResponses += topicPartition -> new PartitionResponse(Errors.UNKNOWN_TOPIC_OR_PARTITION)
+//      else
+//        try {
+//          ProduceRequest.validateRecords(request.header.apiVersion, memoryRecords)
+//          authorizedRequestInfo += (topicPartition -> memoryRecords)
+//        } catch {
+//          case e: ApiException =>
+//            invalidRequestResponses += topicPartition -> new PartitionResponse(Errors.forException(e))
+//        }
     })
 
     // the callback for sending a produce response
