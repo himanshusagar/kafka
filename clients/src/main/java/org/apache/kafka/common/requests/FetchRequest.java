@@ -378,6 +378,10 @@ public class FetchRequest extends AbstractRequest {
     public boolean isFromFollower() {
         return replicaId() >= 0;
     }
+    //akshatgit
+    public boolean isOrderOnly(){
+        return data.isOrderOnly();
+    }
 
     public IsolationLevel isolationLevel() {
         return IsolationLevel.forId(data.isolationLevel());
