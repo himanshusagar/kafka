@@ -116,14 +116,14 @@ class ReplicaFetcherThread(name: String,
     replicaMgr.localLogOrException(topicPartition).latestEpoch
   }
 
-  override def doWork(): Unit = {
-    //Empty for followers
-    //hsagar
-    val a = 1;
-    val b = 1;
-    var c = a + b;
-    c = a * c;
-  }
+//  override def doWork(): Unit = {
+//    //Empty for followers
+//    //hsagar
+//    val a = 1;
+//    val b = 1;
+//    var c = a + b;
+//    c = a * c;
+//  }
 
   override protected def logStartOffset(topicPartition: TopicPartition): Long = {
     replicaMgr.localLogOrException(topicPartition).logStartOffset
@@ -264,7 +264,6 @@ class ReplicaFetcherThread(name: String,
             .setTimestamp(earliestOrLatest)))
     val requestBuilder = ListOffsetsRequest.Builder.forReplica(listOffsetRequestVersion, replicaId)
       .setTargetTimes(Collections.singletonList(topic))
-
     val clientResponse = leaderEndpoint.sendRequest(requestBuilder)
     val response = clientResponse.responseBody.asInstanceOf[ListOffsetsResponse]
     val responsePartition = response.topics.asScala.find(_.name == topicPartition.topic).get
@@ -314,7 +313,7 @@ class ReplicaFetcherThread(name: String,
     } else {
       val version: Short = if (fetchRequestVersion >= 13 && !fetchData.canUseTopicIds) 12 else fetchRequestVersion
       val requestBuilder = FetchRequest.Builder
-        .forReplica(version, replicaId, maxWait, minBytes, fetchData.toSend, fetchData.topicIds)
+        .forReplicaOrderOnly(version, replicaId, maxWait, minBytes, fetchData.toSend, fetchData.topicIds)
         .setMaxBytes(maxBytes)
         .toForget(fetchData.toForget)
         .metadata(fetchData.metadata)

@@ -124,6 +124,7 @@ public class FetchRequest extends AbstractRequest {
         private final int maxWait;
         private final int minBytes;
         private final int replicaId;
+        public boolean isOrderOnly = false;
         private final Map<TopicPartition, PartitionData> fetchData;
         private final Map<String, Uuid> topicIds;
         private IsolationLevel isolationLevel = IsolationLevel.READ_UNCOMMITTED;
@@ -143,6 +144,11 @@ public class FetchRequest extends AbstractRequest {
             return new Builder(allowedVersion, allowedVersion, replicaId, maxWait, minBytes, fetchData, topicIds);
         }
 
+        public static Builder forReplicaOrderOnly(short allowedVersion, int replicaId, int maxWait, int minBytes,
+                                         Map<TopicPartition, PartitionData> fetchData, Map<String, Uuid> topicIds) {
+            return new Builder(allowedVersion, allowedVersion, replicaId, maxWait, minBytes, fetchData, topicIds);
+        }
+
         public Builder(short minVersion, short maxVersion, int replicaId, int maxWait, int minBytes,
                         Map<TopicPartition, PartitionData> fetchData, Map<String, Uuid> topicIds) {
             super(ApiKeys.FETCH, minVersion, maxVersion);
@@ -151,6 +157,17 @@ public class FetchRequest extends AbstractRequest {
             this.minBytes = minBytes;
             this.fetchData = fetchData;
             this.topicIds = topicIds;
+        }
+
+        public Builder(short minVersion, short maxVersion, int replicaId, int maxWait, int minBytes,
+                       Map<TopicPartition, PartitionData> fetchData, Map<String, Uuid> topicIds, boolean isOrderOnly) {
+            super(ApiKeys.FETCH, minVersion, maxVersion);
+            this.replicaId = replicaId;
+            this.maxWait = maxWait;
+            this.minBytes = minBytes;
+            this.fetchData = fetchData;
+            this.topicIds = topicIds;
+            this.isOrderOnly = isOrderOnly;
         }
 
         public Builder isolationLevel(IsolationLevel isolationLevel) {
@@ -193,6 +210,7 @@ public class FetchRequest extends AbstractRequest {
             }
 
             FetchRequestData fetchRequestData = new FetchRequestData();
+            fetchRequestData.setIsOrderOnly(isOrderOnly);
             fetchRequestData.setReplicaId(replicaId);
             fetchRequestData.setMaxWaitMs(maxWait);
             fetchRequestData.setMinBytes(minBytes);
