@@ -51,6 +51,8 @@
   "validVersions": "0-13",
   "flexibleVersions": "12+",
   "fields": [
+    { "name": "IsOrderOnly", "type": "bool", "versions": "0+",
+      "about": "If the fetch request is only to get order from leader" },
     { "name": "ClusterId", "type": "string", "versions": "12+", "nullableVersions": "12+", "default": "null",
       "taggedVersions": "12+", "tag": 0, "ignorable": true,
       "about": "The clusterId if known. This is used to validate metadata fetches prior to broker registration." },
