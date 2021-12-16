@@ -146,7 +146,7 @@ public class FetchRequest extends AbstractRequest {
 
         public static Builder forReplicaOrderOnly(short allowedVersion, int replicaId, int maxWait, int minBytes,
                                          Map<TopicPartition, PartitionData> fetchData, Map<String, Uuid> topicIds) {
-            return new Builder(allowedVersion, allowedVersion, replicaId, maxWait, minBytes, fetchData, topicIds);
+            return new Builder(allowedVersion, allowedVersion, replicaId, maxWait, minBytes, fetchData, topicIds , true);
         }
 
         public Builder(short minVersion, short maxVersion, int replicaId, int maxWait, int minBytes,
