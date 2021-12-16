@@ -99,6 +99,7 @@ class ReplicaAlterLogDirsThread(name: String,
           .setAbortedTransactions(abortedTransactions)
           .setRecords(data.records)
       }
+      info("[hsagar] Inside foreign method processResponseCallback of ReplicaAlterLogDirsThread"  );
     }
 
     // Will throw UnknownTopicIdException if a topic ID is unknown.
