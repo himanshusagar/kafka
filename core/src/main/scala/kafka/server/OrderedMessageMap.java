@@ -24,14 +24,6 @@ public class OrderedMessageMap
         }
         return MemoryRecords.EMPTY;
     }
-
-    public HashMap<ProducerIdAndEpoch , MemoryRecords> get(TopicPartition key)
-    {
-        if( !hMap.containsKey(key) )
-            hMap.put(key, new HashMap<>() );
-        return hMap.get(key);
-    }
-
     public void put(TopicPartition key, ProducerIdAndEpoch producerIdAndEpoch , MemoryRecords message)
     {
         if( !inMap(key) )
@@ -43,9 +35,5 @@ public class OrderedMessageMap
         if( hMap.containsKey(key) )
             return hMap.get(key).containsKey(producerIdAndEpoch);
         return false;
-    }
-    public int length()
-    {
-        return hMap.size();
     }
 }

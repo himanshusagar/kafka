@@ -566,10 +566,7 @@ class KafkaApis(val requestChannel: RequestChannel,
         // akshatgit black magic
 
         if (batch.hasProducerId){
-
-          info("[Akshat] Hmap size in before handleProduceFollowerRequest " + OrderedMessageMapSingleton.hMap.length())
           OrderedMessageMapSingleton.hMap.put(topicPartition, new ProducerIdAndEpoch(batch.producerId(), batch.producerEpoch()), memoryRecords)
-          info("[Akshat] Hmap size in after handleProduceFollowerRequest " + OrderedMessageMapSingleton.hMap.get(topicPartition).size() );
         }
       }
 //      if (!authorizedTopics.contains(topicPartition.topic))
@@ -649,28 +646,27 @@ class KafkaApis(val requestChannel: RequestChannel,
       }
     }
 
-    /*
     def processingStatsCallback(processingStats: FetchResponseStats): Unit = {
       processingStats.forKeyValue { (tp, info) =>
         updateRecordConversionStats(request, tp, info)
       }
     }
-*/
+
     if (authorizedRequestInfo.isEmpty)
       sendResponseCallback(Map.empty)
     else {
-     // val internalTopicsAllowed = request.header.clientId == AdminUtils.AdminClientId
+      val internalTopicsAllowed = request.header.clientId == AdminUtils.AdminClientId
 
       // call the replica manager to append messages to the replicas
-//      replicaManager.appendRecords(
-//        timeout = produceRequest.timeout.toLong,
-//        requiredAcks = produceRequest.acks,
-//        internalTopicsAllowed = internalTopicsAllowed,
-//        origin = AppendOrigin.Client,
-//        entriesPerPartition = authorizedRequestInfo,
-//        requestLocal = requestLocal,
-//        responseCallback = sendResponseCallback,
-//        recordConversionStatsCallback = processingStatsCallback)
+      replicaManager.appendRecords(
+        timeout = produceRequest.timeout.toLong,
+        requiredAcks = produceRequest.acks,
+        internalTopicsAllowed = internalTopicsAllowed,
+        origin = AppendOrigin.Client,
+        entriesPerPartition = authorizedRequestInfo,
+        requestLocal = requestLocal,
+        responseCallback = sendResponseCallback,
+        recordConversionStatsCallback = processingStatsCallback)
 
       // if the request is put into the purgatory, it will have a held reference and hence cannot be garbage collected;
       // hence we clear its data here in order to let GC reclaim its memory since it is already appended to log
@@ -709,12 +705,10 @@ class KafkaApis(val requestChannel: RequestChannel,
       // We cast the type to avoid causing big change to code base.
       // https://issues.apache.org/jira/browse/KAFKA-10698
       val memoryRecords = partition.records.asInstanceOf[MemoryRecords]
-      info("[Akshat]Hmap size in before handleProduceRequest " + OrderedListMapSingleton.hMap.length())
+
       memoryRecords.batches.forEach{ batch =>
         if (batch.hasProducerId){
           OrderedListMapSingleton.hMap.put(topicPartition, new ProducerIdAndEpoch(batch.producerId(), batch.producerEpoch()) )
-
-          info("[Akshat]Hmap size in after handleProduceRequest " + OrderedListMapSingleton.hMap.getProducerIDEpoch(topicPartition).size())
         }
       }
 
@@ -868,43 +862,21 @@ class KafkaApis(val requestChannel: RequestChannel,
 
     val erroneous = mutable.ArrayBuffer[(TopicPartition, FetchResponseData.PartitionData)]()
     val interesting = mutable.ArrayBuffer[(TopicPartition, FetchRequest.PartitionData)]()
-    val orderOnlyBuffer = mutable.ArrayBuffer[TopicPartition]()
-
     val sessionTopicIds = mutable.Map[String, Uuid]()
     if (fetchRequest.isFromFollower) {
-
-      //hsagar
-      if (false)//fetchRequest.isOrderOnly)
-      {
-        // The follower must have ClusterAction on ClusterResource in order to fetch partition data.
-        if (authHelper.authorize(request.context, CLUSTER_ACTION, CLUSTER, CLUSTER_NAME))
-        {
-          fetchContext.foreachPartition { (topicPartition, topicId, data) =>
-            sessionTopicIds.put(topicPartition.topic(), topicId)
-            if (metadataCache.contains(topicPartition))
-              {
-                orderOnlyBuffer += topicPartition
-              }
-          }
+      // The follower must have ClusterAction on ClusterResource in order to fetch partition data.
+      if (authHelper.authorize(request.context, CLUSTER_ACTION, CLUSTER, CLUSTER_NAME)) {
+        fetchContext.foreachPartition { (topicPartition, topicId, data) =>
+          sessionTopicIds.put(topicPartition.topic(), topicId)
+          if (!metadataCache.contains(topicPartition))
+            erroneous += topicPartition -> FetchResponse.partitionResponse(topicPartition.partition, Errors.UNKNOWN_TOPIC_OR_PARTITION)
+          else
+            interesting += (topicPartition -> data)
         }
-
-      }
-      else
-      {
-        // The follower must have ClusterAction on ClusterResource in order to fetch partition data.
-        if (authHelper.authorize(request.context, CLUSTER_ACTION, CLUSTER, CLUSTER_NAME)) {
-          fetchContext.foreachPartition { (topicPartition, topicId, data) =>
-            sessionTopicIds.put(topicPartition.topic(), topicId)
-            if (!metadataCache.contains(topicPartition))
-              erroneous += topicPartition -> FetchResponse.partitionResponse(topicPartition.partition, Errors.UNKNOWN_TOPIC_OR_PARTITION)
-            else
-              interesting += (topicPartition -> data)
-          }
-        } else {
-          fetchContext.foreachPartition { (part, topicId, _) =>
-            sessionTopicIds.put(part.topic(), topicId)
-            erroneous += part -> FetchResponse.partitionResponse(part.partition, Errors.TOPIC_AUTHORIZATION_FAILED)
-          }
+      } else {
+        fetchContext.foreachPartition { (part, topicId, _) =>
+          sessionTopicIds.put(part.topic(), topicId)
+          erroneous += part -> FetchResponse.partitionResponse(part.partition, Errors.TOPIC_AUTHORIZATION_FAILED)
         }
       }
     } else {
@@ -1018,12 +990,6 @@ class KafkaApis(val requestChannel: RequestChannel,
         val abortedTransactions = data.abortedTransactions.map(_.asJava).orNull
         val lastStableOffset = data.lastStableOffset.getOrElse(FetchResponse.INVALID_LAST_STABLE_OFFSET)
         if (data.isReassignmentFetch) reassigningPartitions.add(tp)
-
-        val listArray = OrderedListMapSingleton.hMap.getProducerIDEpoch(tp);
-
-        info("[Akshat] Hmap size in processResponseCallback" + OrderedListMapSingleton.hMap.length())
-        info("[Akshat] listarray size in processResponseCallback" + listArray.size())
-
         val partitionData = new FetchResponseData.PartitionData()
           .setPartitionIndex(tp.partition)
           .setErrorCode(maybeDownConvertStorageError(data.error).code)
@@ -1033,7 +999,6 @@ class KafkaApis(val requestChannel: RequestChannel,
           .setAbortedTransactions(abortedTransactions)
           .setRecords(data.records)
           .setPreferredReadReplica(data.preferredReadReplica.getOrElse(FetchResponse.INVALID_PREFERRED_REPLICA_ID))
-          .setMessageOrders(listArray)
         data.divergingEpoch.foreach(partitionData.setDivergingEpoch)
         partitions.put(tp, partitionData)
       }
@@ -1078,8 +1043,7 @@ class KafkaApis(val requestChannel: RequestChannel,
         }
       }
 
-      if (fetchRequest.isFromFollower)
-      {
+      if (fetchRequest.isFromFollower) {
         // We've already evaluated against the quota and are good to go. Just need to record it now.
         unconvertedFetchResponse = fetchContext.updateAndGenerateResponseData(partitions)
         val responseSize = KafkaApis.sizeOfThrottledPartitions(versionId, unconvertedFetchResponse, quotas.leader, sessionTopicIds.asJava)

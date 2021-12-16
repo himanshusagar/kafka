@@ -344,13 +344,6 @@ abstract class AbstractFetcherThread(name: String,
               Errors.forCode(partitionData.errorCode) match {
                 case Errors.NONE =>
                   try {
-
-                    val msgOrders = partitionData.messageOrders();
-                    //val msgOrders = OrderedListMapSingleton.hMap.getProducerIDEpoch(topicPartition);
-                    //partitionData.setMessageOrders( msgOrders );
-
-                    info("[Akshat] processFetchRequest served by leader" + msgOrders.size())
-
                     // Once we hand off the partition data to the subclass, we can't mess with it any more in this thread
                     val logAppendInfoOpt = processPartitionData(topicPartition, currentFetchState.fetchOffset,
                       partitionData)
