@@ -173,42 +173,57 @@ class ReplicaFetcherThread(name: String,
     val logTrace = isTraceEnabled
     val partition = replicaMgr.getPartitionOrException(topicPartition)
     val log = partition.localLogOrException
-    val records = toMemoryRecords(FetchResponse.recordsOrFail(partitionData))
+    val hMapForTP = OrderedMessageMapSingleton.hMap.get(topicPartition);
+    val msgOrders = partitionData.messageOrders;
+    val recordsList = FetchResponse.recordsOrFailUsingOrder(hMapForTP , msgOrders );
+    var logAppendInfo:Option[LogAppendInfo] = None
+    info("[Akshat]MessageOrder array size "+recordsList.size())
 
-    maybeWarnIfOversizedRecords(records, topicPartition)
+    var someBoolean = true;
+    for( i <- 0 until recordsList.size())
+      {
+        var records = recordsList.get(i);
+        info("Got " + someBoolean);
+        if(someBoolean)
+        {
+          records = toMemoryRecords(FetchResponse.recordsOrFail(partitionData));
+          someBoolean = !someBoolean;
+        }
+        maybeWarnIfOversizedRecords(records, topicPartition)
 
-    if (fetchOffset != log.logEndOffset)
-      throw new IllegalStateException("Offset mismatch for partition %s: fetched offset = %d, log end offset = %d.".format(
-        topicPartition, fetchOffset, log.logEndOffset))
+        if (fetchOffset != log.logEndOffset)
+          throw new IllegalStateException("Offset mismatch for partition %s: fetched offset = %d, log end offset = %d.".format(
+            topicPartition, fetchOffset, log.logEndOffset))
 
-    if (logTrace)
-      trace("Follower has replica log end offset %d for partition %s. Received %d messages and leader hw %d"
-        .format(log.logEndOffset, topicPartition, records.sizeInBytes, partitionData.highWatermark))
+        if (logTrace)
+          trace("Follower has replica log end offset %d for partition %s. Received %d messages and leader hw %d"
+            .format(log.logEndOffset, topicPartition, records.sizeInBytes, partitionData.highWatermark))
 
-    // Append the leader's messages to the log
-    val logAppendInfo = partition.appendRecordsToFollowerOrFutureReplica(records, isFuture = false)
+        // Append the leader's messages to the log
+        logAppendInfo = partition.appendRecordsToFollowerOrFutureReplica(records, isFuture = false)
 
-    if (logTrace)
-      trace("Follower has replica log end offset %d after appending %d bytes of messages for partition %s"
-        .format(log.logEndOffset, records.sizeInBytes, topicPartition))
-    val leaderLogStartOffset = partitionData.logStartOffset
+        if (logTrace)
+          trace("Follower has replica log end offset %d after appending %d bytes of messages for partition %s"
+            .format(log.logEndOffset, records.sizeInBytes, topicPartition))
+        val leaderLogStartOffset = partitionData.logStartOffset
 
-    // For the follower replica, we do not need to keep its segment base offset and physical position.
-    // These values will be computed upon becoming leader or handling a preferred read replica fetch.
-    val followerHighWatermark = log.updateHighWatermark(partitionData.highWatermark)
-    log.maybeIncrementLogStartOffset(leaderLogStartOffset, LeaderOffsetIncremented)
-    if (logTrace)
-      trace(s"Follower set replica high watermark for partition $topicPartition to $followerHighWatermark")
+        // For the follower replica, we do not need to keep its segment base offset and physical position.
+        // These values will be computed upon becoming leader or handling a preferred read replica fetch.
+        val followerHighWatermark = log.updateHighWatermark(partitionData.highWatermark)
+        log.maybeIncrementLogStartOffset(leaderLogStartOffset, LeaderOffsetIncremented)
+        if (logTrace)
+          trace(s"Follower set replica high watermark for partition $topicPartition to $followerHighWatermark")
 
-    // Traffic from both in-sync and out of sync replicas are accounted for in replication quota to ensure total replication
-    // traffic doesn't exceed quota.
-    if (quota.isThrottled(topicPartition))
-      quota.record(records.sizeInBytes)
+        // Traffic from both in-sync and out of sync replicas are accounted for in replication quota to ensure total replication
+        // traffic doesn't exceed quota.
+        if (quota.isThrottled(topicPartition))
+          quota.record(records.sizeInBytes)
 
-    if (partition.isReassigning && partition.isAddingLocalReplica)
-      brokerTopicStats.updateReassignmentBytesIn(records.sizeInBytes)
+        if (partition.isReassigning && partition.isAddingLocalReplica)
+          brokerTopicStats.updateReassignmentBytesIn(records.sizeInBytes)
 
-    brokerTopicStats.updateReplicationBytesIn(records.sizeInBytes)
+        brokerTopicStats.updateReplicationBytesIn(records.sizeInBytes)
+      }
 
     logAppendInfo
   }

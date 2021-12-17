@@ -976,6 +976,9 @@ class KafkaApis(val requestChannel: RequestChannel,
                 // as possible. With KIP-283, we have the ability to lazily down-convert in a chunked manner. The lazy, chunked
                 // down-conversion always guarantees that at least one batch of messages is down-converted and sent out to the
                 // client.
+                info("[hsagar] Inside Leader : downConvertMagic : processResponseCallback MessageOrder Size OrderedListMapSingleton " +
+                  OrderedListMapSingleton.hMap.getProducerIDEpoch(tp).size() );
+
                 new FetchResponseData.PartitionData()
                   .setPartitionIndex(tp.partition)
                   .setErrorCode(maybeDownConvertStorageError(Errors.forCode(partitionData.errorCode)).code)
@@ -985,6 +988,9 @@ class KafkaApis(val requestChannel: RequestChannel,
                   .setAbortedTransactions(partitionData.abortedTransactions)
                   .setRecords(new LazyDownConversionRecords(tp, unconvertedRecords, magic, fetchContext.getFetchOffset(tp).get, time))
                   .setPreferredReadReplica(partitionData.preferredReadReplica())
+              //    .setMessageOrders(OrderedListMapSingleton.hMap.getProducerIDEpoch(tp))
+                   //hsagar
+
               } catch {
                 case e: UnsupportedCompressionTypeException =>
                   trace("Received unsupported compression type error during down-conversion", e)
@@ -1002,6 +1008,9 @@ class KafkaApis(val requestChannel: RequestChannel,
               .setRecords(unconvertedRecords)
               .setPreferredReadReplica(partitionData.preferredReadReplica)
               .setDivergingEpoch(partitionData.divergingEpoch)
+              .setMessageOrders(OrderedListMapSingleton.hMap.getProducerIDEpoch(tp))
+          // hsagar
+
         }
       }
     }

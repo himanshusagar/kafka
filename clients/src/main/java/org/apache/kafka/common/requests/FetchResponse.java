@@ -25,6 +25,7 @@ import org.apache.kafka.common.protocol.Errors;
 import org.apache.kafka.common.protocol.ObjectSerializationCache;
 import org.apache.kafka.common.record.MemoryRecords;
 import org.apache.kafka.common.record.Records;
+import org.apache.kafka.common.utils.ProducerIdAndEpoch;
 
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
@@ -196,6 +197,32 @@ public class FetchResponse extends AbstractResponse {
             .setPartitionIndex(partition)
             .setErrorCode(error.code())
             .setHighWatermark(FetchResponse.INVALID_HIGH_WATERMARK);
+    }
+
+
+    //hsagar
+    public static List<MemoryRecords> recordsOrFailUsingOrder(HashMap<ProducerIdAndEpoch, MemoryRecords> memRecords , List<FetchResponseData.ProducerIDEpoch> msgOrders)
+    {
+        List<MemoryRecords> recordsList = new ArrayList<>();
+        for(FetchResponseData.ProducerIDEpoch producerIDEpoch : msgOrders)
+        {
+            short id = (short) producerIDEpoch.producerEpoch();
+            ProducerIdAndEpoch newKey = new ProducerIdAndEpoch( producerIDEpoch.producerID() , id );
+            if(memRecords.containsKey(newKey))
+            {
+                MemoryRecords record = memRecords.get(newKey);
+                recordsList.add(record);
+            }
+        }
+        return recordsList;
+
+        /*
+        if (partition.records() == null) return MemoryRecords.EMPTY;
+        if (partition.records() instanceof Records) return (Records) partition.records();
+        throw new ClassCastException("The record type is " + partition.records().getClass().getSimpleName() + ", which is not a subtype of " +
+                Records.class.getSimpleName() + ". This method is only safe to call if the `FetchResponse` was deserialized from bytes.");
+
+         */
     }
 
     /**

@@ -41,7 +41,12 @@ public class OrderedListMap
     public void put(TopicPartition key, ProducerIdAndEpoch producerIdAndEpoch)
     {
         if( !inMap(key) )
-            hMap.put(key, new ArrayList<>() );
+            hMap.put(key, new ArrayList<>());
+        for (ProducerIdAndEpoch idAndEpoch : hMap.get(key))
+        {
+            if(idAndEpoch.equals(producerIdAndEpoch))
+                return;
+        }
         hMap.get(key).add(producerIdAndEpoch);
     }
     public List<ProducerIdAndEpoch> get(TopicPartition key)

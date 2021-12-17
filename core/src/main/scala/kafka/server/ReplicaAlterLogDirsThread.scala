@@ -98,6 +98,8 @@ class ReplicaAlterLogDirsThread(name: String,
           .setLogStartOffset(data.logStartOffset)
           .setAbortedTransactions(abortedTransactions)
           .setRecords(data.records)
+        //hsagar  .setMessageOrders(OrderedListMapSingleton.hMap.getProducerIDEpoch(tp))
+
       }
       info("[hsagar] Inside foreign method processResponseCallback of ReplicaAlterLogDirsThread"  );
     }
