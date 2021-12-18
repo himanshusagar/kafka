@@ -178,17 +178,13 @@ class ReplicaFetcherThread(name: String,
     val recordsList = FetchResponse.recordsOrFailUsingOrder(hMapForTP , msgOrders );
     var logAppendInfo:Option[LogAppendInfo] = None
     info("[Akshat]MessageOrder array size "+recordsList.size())
+    // Old cold here :
+    // records = toMemoryRecords(FetchResponse.recordsOrFail(partitionData));
 
-    var someBoolean = true;
+
     for( i <- 0 until recordsList.size())
       {
-        var records = recordsList.get(i);
-        info("Got " + someBoolean);
-        if(someBoolean)
-        {
-          records = toMemoryRecords(FetchResponse.recordsOrFail(partitionData));
-          someBoolean = !someBoolean;
-        }
+        val records = recordsList.get(i);
         maybeWarnIfOversizedRecords(records, topicPartition)
 
         if (fetchOffset != log.logEndOffset)
