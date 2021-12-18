@@ -52,15 +52,7 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.nio.BufferUnderflowException;
 import java.nio.ByteBuffer;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.LinkedList;
-import java.util.List;
-import java.util.Map;
-import java.util.Optional;
-import java.util.Random;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.stream.Collectors;
 
@@ -683,6 +675,9 @@ public class NetworkClient implements KafkaClient {
         Node foundCanConnect = null;
         Node foundReady = null;
 
+        HashSet<Node> hSet = new HashSet<>();
+        Node leastLoaded = Node.noNode();
+
         int offset = this.randOffset.nextInt(nodes.size());
         for (int i = 0; i < nodes.size(); i++) {
             int idx = (offset + i) % nodes.size();
@@ -692,7 +687,12 @@ public class NetworkClient implements KafkaClient {
                 if (currInflight == 0) {
                     // if we find an established connection with no in-flight requests we can stop right away
                     log.trace("Found least loaded node {} connected with no in-flight requests", node);
-                    return node;
+                    hSet.add(node);
+
+                    if(leastLoaded.equals(Node.noNode()))
+                        leastLoaded = node;
+                    //return node;
+
                 } else if (currInflight < inflight) {
                     // otherwise if this is the best we have found so far, record that
                     inflight = currInflight;
@@ -711,6 +711,9 @@ public class NetworkClient implements KafkaClient {
                         "for sending or connecting", node);
             }
         }
+
+        if(hSet.size() == nodes.size())
+            return leastLoaded;
 
         // We prefer established connections if possible. Otherwise, we will wait for connections
         // which are being established before connecting to new nodes.

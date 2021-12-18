@@ -181,11 +181,12 @@ class ReplicaFetcherThread(name: String,
     var logAppendInfo:Option[LogAppendInfo] = None
     info("[Akshat]MessageOrder array size "+recordsList.size())
     // Old cold here :
-    val records = toMemoryRecords(FetchResponse.recordsOrFail(partitionData));
+   // val records = toMemoryRecords(FetchResponse.recordsOrFail(partitionData));
 
-    //for( i <- 0 until recordsList.size())
-      //{
-        //val records = recordsList.get(i);
+    for( i <- 0 until recordsList.size())
+      {
+        info("Records iterator : "+i)
+        val records = recordsList.get(i);
         maybeWarnIfOversizedRecords(records, topicPartition)
 
         if (fetchOffset != log.logEndOffset)
@@ -220,7 +221,7 @@ class ReplicaFetcherThread(name: String,
           brokerTopicStats.updateReassignmentBytesIn(records.sizeInBytes)
 
         brokerTopicStats.updateReplicationBytesIn(records.sizeInBytes)
-     // }
+      }
 
    logAppendInfo
   }
