@@ -173,18 +173,19 @@ class ReplicaFetcherThread(name: String,
     val logTrace = isTraceEnabled
     val partition = replicaMgr.getPartitionOrException(topicPartition)
     val log = partition.localLogOrException
+    //follower already batch
     val hMapForTP = OrderedMessageMapSingleton.hMap.get(topicPartition);
+    // got it from leader
     val msgOrders = partitionData.messageOrders;
     val recordsList = FetchResponse.recordsOrFailUsingOrder(hMapForTP , msgOrders );
     var logAppendInfo:Option[LogAppendInfo] = None
     info("[Akshat]MessageOrder array size "+recordsList.size())
     // Old cold here :
-    // records = toMemoryRecords(FetchResponse.recordsOrFail(partitionData));
+    val records = toMemoryRecords(FetchResponse.recordsOrFail(partitionData));
 
-
-    for( i <- 0 until recordsList.size())
-      {
-        val records = recordsList.get(i);
+    //for( i <- 0 until recordsList.size())
+      //{
+        //val records = recordsList.get(i);
         maybeWarnIfOversizedRecords(records, topicPartition)
 
         if (fetchOffset != log.logEndOffset)
@@ -219,9 +220,9 @@ class ReplicaFetcherThread(name: String,
           brokerTopicStats.updateReassignmentBytesIn(records.sizeInBytes)
 
         brokerTopicStats.updateReplicationBytesIn(records.sizeInBytes)
-      }
+     // }
 
-    logAppendInfo
+   logAppendInfo
   }
 
   def maybeWarnIfOversizedRecords(records: MemoryRecords, topicPartition: TopicPartition): Unit = {
