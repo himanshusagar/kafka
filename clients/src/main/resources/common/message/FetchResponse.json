@@ -60,6 +60,8 @@
         { "name": "MessageOrders", "type": "[]ProducerIDEpoch", "versions": "0+",
           "about": "Class defining messageID in the form of producer epoch and producer ID.",
           "fields": [
+            { "name": "FetchOffset", "type": "int64", "versions": "0+", "default": "-1" },
+            { "name": "LeaderEpoch", "type": "int64", "versions": "0+", "default": "-1" },
             { "name": "ProducerEpoch", "type": "int64", "versions": "0+", "default": "-1" },
             { "name": "ProducerID", "type": "int64", "versions": "0+", "default": "-1" }
           ]},
