@@ -852,6 +852,21 @@ class UnifiedLog(@volatile var logStartOffset: Long,
             }
           }
 
+//          //hsagar
+//          val recordList = scala.collection.mutable.ListBuffer.empty[DefaultRecord]
+//          val recordBatchList = scala.collection.mutable.ListBuffer.empty[DefaultRecordBatch]
+//
+//          validRecords.batches().forEach{ batch =>
+//            if (batch.magic >= RecordBatch.MAGIC_VALUE_V2) {
+//              val dBatch:DefaultRecordBatch = batch.asInstanceOf[DefaultRecordBatch];
+//              recordBatchList.append(dBatch);
+//
+//              batch.forEach{ record =>
+//                val drecord: DefaultRecord = record.asInstanceOf[DefaultRecord];
+//                recordList.append(drecord);
+//              }
+//            }
+//          }
           // update the epoch cache with the epoch stamped onto the message by the leader
           validRecords.batches.forEach { batch =>
             if (batch.magic >= RecordBatch.MAGIC_VALUE_V2) {
