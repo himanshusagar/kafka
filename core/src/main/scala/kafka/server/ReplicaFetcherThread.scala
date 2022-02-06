@@ -197,6 +197,10 @@ class ReplicaFetcherThread(name: String,
           trace("Follower has replica log end offset %d for partition %s. Received %d messages and leader hw %d"
             .format(log.logEndOffset, topicPartition, records.sizeInBytes, partitionData.highWatermark))
 
+        //hsagar : Set Epoch Manually
+        records.batches().forEach{ batch =>
+          batch.setPartitionLeaderEpoch(partition.getLeaderEpoch);
+        }
         // Append the leader's messages to the log
         logAppendInfo = partition.appendRecordsToFollowerOrFutureReplica(records, isFuture = false)
 
