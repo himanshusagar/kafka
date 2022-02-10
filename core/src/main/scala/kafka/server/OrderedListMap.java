@@ -24,12 +24,14 @@ public class OrderedListMap
     {
         return hMap.size();
     }
-    public List<FetchResponseData.ProducerIDEpoch> getProducerIDEpoch(TopicPartition key)
+    public List<FetchResponseData.ProducerIDEpoch> getProducerIDEpoch(TopicPartition key, int offset)
     {
+
         List<FetchResponseData.ProducerIDEpoch> output = new ArrayList<>();
         List<ProducerIdAndEpoch> tmp = get(key);
-        for(ProducerIdAndEpoch pIE : tmp)
+        for( int i = offset; i< tmp.size(); i++)
         {
+            ProducerIdAndEpoch pIE = tmp.get(i);
             FetchResponseData.ProducerIDEpoch obj = new FetchResponseData.ProducerIDEpoch();
             obj.setProducerEpoch(pIE.epoch);
             obj.setProducerID(pIE.producerId);
@@ -42,11 +44,11 @@ public class OrderedListMap
     {
         if( !inMap(key) )
             hMap.put(key, new ArrayList<>());
-        for (ProducerIdAndEpoch idAndEpoch : hMap.get(key))
-        {
-            if(idAndEpoch.equals(producerIdAndEpoch))
-                return;
-        }
+//        for (ProducerIdAndEpoch idAndEpoch : hMap.get(key))
+//        {
+//            if(idAndEpoch.equals(producerIdAndEpoch))
+//                return;
+//        }
         hMap.get(key).add(producerIdAndEpoch);
     }
     public List<ProducerIdAndEpoch> get(TopicPartition key)

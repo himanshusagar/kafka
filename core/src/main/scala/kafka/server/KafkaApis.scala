@@ -72,13 +72,13 @@ import org.apache.kafka.common.security.token.delegation.{DelegationToken, Token
 import org.apache.kafka.common.utils.{ProducerIdAndEpoch, Time}
 import org.apache.kafka.common.{Node, TopicPartition, Uuid}
 import org.apache.kafka.server.authorizer._
+
 import java.lang.{Long => JLong}
 import java.nio.ByteBuffer
 import java.util
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.{Collections, Optional}
-
 import scala.annotation.nowarn
 import scala.collection.{Map, Seq, Set, immutable, mutable}
 import scala.jdk.CollectionConverters._
@@ -936,7 +936,7 @@ class KafkaApis(val requestChannel: RequestChannel,
     def maybeConvertFetchedData(tp: TopicPartition,
                                 partitionData: FetchResponseData.PartitionData): FetchResponseData.PartitionData = {
       val logConfig = replicaManager.getLogConfig(tp)
-
+      val offset = fetchContext.getFetchOffset(tp).get
       if (logConfig.exists(_.compressionType == ZStdCompressionCodec.name) && versionId < 10) {
         trace(s"Fetching messages is disabled for ZStandard compressed partition $tp. Sending unsupported version response to $clientId.")
         FetchResponse.partitionResponse(tp.partition, Errors.UNSUPPORTED_COMPRESSION_TYPE)
@@ -965,6 +965,7 @@ class KafkaApis(val requestChannel: RequestChannel,
 
         downConvertMagic match {
           case Some(magic) =>
+
             // For fetch requests from clients, check if down-conversion is disabled for the particular partition
             if (!fetchRequest.isFromFollower && !logConfig.forall(_.messageDownConversionEnable)) {
               trace(s"Conversion to message format ${downConvertMagic.get} is disabled for partition $tp. Sending unsupported version response to $clientId.")
@@ -977,7 +978,7 @@ class KafkaApis(val requestChannel: RequestChannel,
                 // down-conversion always guarantees that at least one batch of messages is down-converted and sent out to the
                 // client.
                 info("[hsagar] Inside Leader : downConvertMagic : processResponseCallback MessageOrder Size OrderedListMapSingleton " +
-                  OrderedListMapSingleton.hMap.getProducerIDEpoch(tp).size() );
+                  OrderedListMapSingleton.hMap.getProducerIDEpoch(tp, offset.toInt).size() );
 
                 new FetchResponseData.PartitionData()
                   .setPartitionIndex(tp.partition)
@@ -1008,9 +1009,8 @@ class KafkaApis(val requestChannel: RequestChannel,
               .setRecords(unconvertedRecords)
               .setPreferredReadReplica(partitionData.preferredReadReplica)
               .setDivergingEpoch(partitionData.divergingEpoch)
-              .setMessageOrders(OrderedListMapSingleton.hMap.getProducerIDEpoch(tp))
+              .setMessageOrders(OrderedListMapSingleton.hMap.getProducerIDEpoch(tp, offset.toInt))
           // hsagar
-
         }
       }
     }
@@ -1024,8 +1024,9 @@ class KafkaApis(val requestChannel: RequestChannel,
         val lastStableOffset = data.lastStableOffset.getOrElse(FetchResponse.INVALID_LAST_STABLE_OFFSET)
         if (data.isReassignmentFetch) reassigningPartitions.add(tp)
 
-        val listArray = OrderedListMapSingleton.hMap.getProducerIDEpoch(tp)
-
+        val offset = fetchContext.getFetchOffset(tp).get
+        info("OrderedListMapSingleton Size: "+ OrderedListMapSingleton)
+        val listArray = OrderedListMapSingleton.hMap.getProducerIDEpoch(tp, offset.toInt)
         val partitionData = new FetchResponseData.PartitionData()
           .setPartitionIndex(tp.partition)
           .setErrorCode(maybeDownConvertStorageError(data.error).code)
@@ -1037,9 +1038,11 @@ class KafkaApis(val requestChannel: RequestChannel,
           .setPreferredReadReplica(data.preferredReadReplica.getOrElse(FetchResponse.INVALID_PREFERRED_REPLICA_ID))
           .setMessageOrders(listArray)
 
-        info("[hsagar] Inside Leader : processResponseCallback MessageOrder Size OrderedListMapSingleton " + listArray.size())
+        info("[hsagar] Inside Leader : List size: " + OrderedListMapSingleton.hMap.get(tp).size())
+        info("[hsagar] Inside Leader : processResponseCallback MessageOrder Size OrderedListMapSingleton " + listArray.size() + " offset: "+ offset)
 
         data.divergingEpoch.foreach(partitionData.setDivergingEpoch)
+
         partitions.put(tp, partitionData)
       }
       erroneous.foreach { case (tp, data) => partitions.put(tp, data) }

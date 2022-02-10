@@ -180,6 +180,7 @@ class ReplicaFetcherThread(name: String,
     val recordsList = FetchResponse.recordsOrFailUsingOrder(hMapForTP , msgOrders );
     var logAppendInfo:Option[LogAppendInfo] = None
     info("[Akshat]MessageOrder array size "+recordsList.size())
+    info("[Akshat]processPartitionData FetchOffset"+fetchOffset)
     // Old cold here :
    // val records = toMemoryRecords(FetchResponse.recordsOrFail(partitionData));
 
