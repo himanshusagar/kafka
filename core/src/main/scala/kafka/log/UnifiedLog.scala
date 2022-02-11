@@ -726,6 +726,15 @@ class UnifiedLog(@volatile var logStartOffset: Long,
    * @return Information about the appended messages including the first and last offset.
    */
   def appendAsFollower(records: MemoryRecords): LogAppendInfo = {
+
+      val offset = new LongRef(localLog.logEndOffset)
+      records.batches.forEach{ batch =>
+        batch.forEach { _ =>
+           offset.getAndIncrement()
+        }
+        batch.setLastOffset(offset.value - 1)
+      }
+
     append(records,
       origin = AppendOrigin.Replication,
       interBrokerProtocolVersion = ApiVersion.latestVersion,
