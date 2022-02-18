@@ -537,8 +537,6 @@ class KafkaApis(val requestChannel: RequestChannel,
   def handleProduceFollowerRequest(request: RequestChannel.Request, requestLocal: RequestLocal): Unit = {
     info("[Akshat]From follower produce handler")
     val produceRequest = request.body[ProduceFollowerRequest]
-// hsagar    val requestSize = request.sizeInBytes
-
     if (RequestUtils.hasTransactionalRecords(produceRequest)) {
       val isAuthorizedTransactional = produceRequest.transactionalId != null &&
         authHelper.authorize(request.context, WRITE, TRANSACTIONAL_ID, produceRequest.transactionalId)
@@ -550,154 +548,21 @@ class KafkaApis(val requestChannel: RequestChannel,
 
     produceRequest.data.topicData.forEach(topic => topic.partitionData.forEach { partition =>
       val topicPartition = new TopicPartition(topic.name, partition.index)
-      // This caller assumes the type is MemoryRecords and that is true on current serialization
-      // We cast the type to avoid causing big change to code base.
-      // https://issues.apache.org/jira/browse/KAFKA-10698
       val memoryRecords = partition.records.asInstanceOf[MemoryRecords]
       memoryRecords.batches.forEach{ batch =>
         // akshatgit follower side map without order filling aka black magic.
         if (batch.hasProducerId){
           OrderedMessageMapSingleton.hMap.put(topicPartition, new ProducerIdAndEpoch(batch.producerId(), batch.producerEpoch()), memoryRecords)
           info("[hsagar] Inside Follower : handleProduceFollowerRequest : " + OrderedMessageMapSingleton.hMap.length()
-          + " topicPartition : " + topicPartition +  OrderedMessageMapSingleton.hMap.get(topicPartition).size() );
+            + " topicPartition : " + topicPartition +  OrderedMessageMapSingleton.hMap.get(topicPartition).size() );
 
 
         }
       }
     })
-
-      /*
-      hsagar
-         val unauthorizedTopicResponses = mutable.Map[TopicPartition, PartitionResponse]()
-         val nonExistingTopicResponses = mutable.Map[TopicPartition, PartitionResponse]()
-         val invalidRequestResponses = mutable.Map[TopicPartition, PartitionResponse]()
-         val authorizedRequestInfo = mutable.Map[TopicPartition, MemoryRecords]()
-         // cache the result to avoid redundant authorization calls
-     //    val authorizedTopics = authHelper.filterByAuthorized(request.context, WRITE, TOPIC,
-     //      produceRequest.data().topicData().asScala)(_.name())
-
-         produceRequest.data.topicData.forEach(topic => topic.partitionData.forEach { partition =>
-           val topicPartition = new TopicPartition(topic.name, partition.index)
-           // This caller assumes the type is MemoryRecords and that is true on current serialization
-           // We cast the type to avoid causing big change to code base.
-           // https://issues.apache.org/jira/browse/KAFKA-10698
-           val memoryRecords = partition.records.asInstanceOf[MemoryRecords]
-           memoryRecords.batches.forEach{ batch =>
-             // akshatgit black magic
-
-             if (batch.hasProducerId){
-               OrderedMessageMapSingleton.hMap.put(topicPartition, new ProducerIdAndEpoch(batch.producerId(), batch.producerEpoch()), memoryRecords)
-             }
-           }
-         })
-
-     //      if (!authorizedTopics.contains(topicPartition.topic))
-     //        unauthorizedTopicResponses += topicPartition -> new PartitionResponse(Errors.TOPIC_AUTHORIZATION_FAILED)
-     //      else if (!metadataCache.contains(topicPartition))
-     //        nonExistingTopicResponses += topicPartition -> new PartitionResponse(Errors.UNKNOWN_TOPIC_OR_PARTITION)
-     //      else
-     //        try {
-     //          ProduceRequest.validateRecords(request.header.apiVersion, memoryRecords)
-     //          authorizedRequestInfo += (topicPartition -> memoryRecords)
-     //        } catch {
-     //          case e: ApiException =>
-     //            invalidRequestResponses += topicPartition -> new PartitionResponse(Errors.forException(e))
-     //        }
-         })
-
-         // the callback for sending a produce response
-         // The construction of ProduceResponse is able to accept auto-generated protocol data so
-         // KafkaApis#handleProduceRequest should apply auto-generated protocol to avoid extra conversion.
-         // https://issues.apache.org/jira/browse/KAFKA-10730
-         @nowarn("cat=deprecation")
-         def sendResponseCallback(responseStatus: Map[TopicPartition, PartitionResponse]): Unit = {
-           val mergedResponseStatus = responseStatus ++ unauthorizedTopicResponses ++ nonExistingTopicResponses ++ invalidRequestResponses
-           var errorInResponse = false
-
-           mergedResponseStatus.forKeyValue { (topicPartition, status) =>
-             if (status.error != Errors.NONE) {
-               errorInResponse = true
-               debug("Produce request with correlation id %d from client %s on partition %s failed due to %s".format(
-                 request.header.correlationId,
-                 request.header.clientId,
-                 topicPartition,
-                 status.error.exceptionName))
-             }
-           }
-
-           // Record both bandwidth and request quota-specific values and throttle by muting the channel if any of the quotas
-           // have been violated. If both quotas have been violated, use the max throttle time between the two quotas. Note
-           // that the request quota is not enforced if acks == 0.
-           val timeMs = time.milliseconds()
-           val bandwidthThrottleTimeMs = quotas.produce.maybeRecordAndGetThrottleTimeMs(request, requestSize, timeMs)
-           val requestThrottleTimeMs =
-             if (produceRequest.acks == 0) 0
-             else quotas.request.maybeRecordAndGetThrottleTimeMs(request, timeMs)
-           val maxThrottleTimeMs = Math.max(bandwidthThrottleTimeMs, requestThrottleTimeMs)
-           if (maxThrottleTimeMs > 0) {
-             request.apiThrottleTimeMs = maxThrottleTimeMs
-             if (bandwidthThrottleTimeMs > requestThrottleTimeMs) {
-               requestHelper.throttle(quotas.produce, request, bandwidthThrottleTimeMs)
-             } else {
-               requestHelper.throttle(quotas.request, request, requestThrottleTimeMs)
-             }
-           }
-
-           // Send the response immediately. In case of throttling, the channel has already been muted.
-           if (produceRequest.acks == 0) {
-             // no operation needed if producer request.required.acks = 0; however, if there is any error in handling
-             // the request, since no response is expected by the producer, the server will close socket server so that
-             // the producer client will know that some error has happened and will refresh its metadata
-             if (errorInResponse) {
-               val exceptionsSummary = mergedResponseStatus.map { case (topicPartition, status) =>
-                 topicPartition -> status.error.exceptionName
-               }.mkString(", ")
-               info(
-                 s"Closing connection due to error during produce request with correlation id ${request.header.correlationId} " +
-                   s"from client id ${request.header.clientId} with ack=0\n" +
-                   s"Topic and partition to exceptions: $exceptionsSummary"
-               )
-               requestChannel.closeConnection(request, new ProduceResponse(mergedResponseStatus.asJava).errorCounts)
-             } else {
-               // Note that although request throttling is exempt for acks == 0, the channel may be throttled due to
-               // bandwidth quota violation.
-               requestHelper.sendNoOpResponseExemptThrottle(request)
-             }
-           } else {
-             requestChannel.sendResponse(request, new ProduceResponse(mergedResponseStatus.asJava, maxThrottleTimeMs), None)
-           }
-         }
-
-         def processingStatsCallback(processingStats: FetchResponseStats): Unit = {
-           processingStats.forKeyValue { (tp, info) =>
-             updateRecordConversionStats(request, tp, info)
-           }
-         }
-
-         if (authorizedRequestInfo.isEmpty)
-           sendResponseCallback(Map.empty)
-         else {
-           val internalTopicsAllowed = request.header.clientId == AdminUtils.AdminClientId
-
-           // call the replica manager to append messages to the replicas
-           replicaManager.appendRecords(
-             timeout = produceRequest.timeout.toLong,
-             requiredAcks = produceRequest.acks,
-             internalTopicsAllowed = internalTopicsAllowed,
-             origin = AppendOrigin.Client,
-             entriesPerPartition = authorizedRequestInfo,
-             requestLocal = requestLocal,
-             responseCallback = sendResponseCallback,
-             recordConversionStatsCallback = processingStatsCallback)
-
-           // if the request is put into the purgatory, it will have a held reference and hence cannot be garbage collected;
-           // hence we clear its data here in order to let GC reclaim its memory since it is already appended to log
-           produceRequest.clearPartitionRecords()
-         }
-        */
-
+    // akshatgit sending no-op response for ack=0
+    requestHelper.sendNoOpResponseExemptThrottle(request)
   }
-
 
   /**
    * Handle a produce request

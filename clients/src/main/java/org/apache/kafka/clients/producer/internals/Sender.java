@@ -871,7 +871,7 @@ public class Sender implements Runnable {
                     leaderID = follower.id();
                 }
                 followers.add(follower.id());
-                log.info("[Producer Log]Topic: %s, follower: %s", partitionInfo.topic(), follower.host());
+                log.info("[Producer Log]Adding follower; Topic: {}, follower: {}", partitionInfo.topic(), follower.host());
 //                client.ready(follower, now);
             }
             MemoryRecords records = batch.records();
@@ -934,9 +934,9 @@ public class Sender implements Runnable {
                     //Creating different request for followers
                     ProduceFollowerRequest.Builder requestBuilder = ProduceFollowerRequest.forMagic(minUsedMagic,
                             new ProduceFollowerRequestData()
-                                    .setAcks(acks)
+                                    .setAcks((short) 0)
                                     .setTimeoutMs(timeout)
-                                    .setTransactionalId(transactionalId)
+//                                    .setTransactionalId(transactionalId)
                                     .setTopicData(tpd2));
 
                     RequestCompletionHandler callback = response -> handleFollowerProduceResponse(response, recordsByPartition, time.milliseconds());
@@ -944,7 +944,7 @@ public class Sender implements Runnable {
                     ClientRequest clientRequestFollower = client.newClientRequest(Integer.toString(followerID), requestBuilder, now, acks != 0,
                             requestTimeoutMs, callback);
                     client.send(clientRequestFollower, now);
-                    log.trace("Sent produce request to followers {}: {}", Integer.toString(followerID), requestBuilder);
+                    log.info("Sent produce request to followers {}: {}", Integer.toString(followerID), requestBuilder);
                 }
                 else
                 {
@@ -962,7 +962,7 @@ public class Sender implements Runnable {
                     ClientRequest clientRequestFollower = client.newClientRequest(Integer.toString(followerID), requestBuilder, now, acks != 0,
                             requestTimeoutMs, callback);
                     client.send(clientRequestFollower, now);
-                    log.trace("Sent produce request to leader {}: {}", Integer.toString(followerID), requestBuilder);
+                    log.info("Sent produce request to leader {}: {}", Integer.toString(followerID), requestBuilder);
                 }
             }
             catch(Exception e)
