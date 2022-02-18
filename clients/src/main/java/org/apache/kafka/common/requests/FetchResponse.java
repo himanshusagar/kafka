@@ -25,6 +25,7 @@ import org.apache.kafka.common.protocol.Errors;
 import org.apache.kafka.common.protocol.ObjectSerializationCache;
 import org.apache.kafka.common.record.MemoryRecords;
 import org.apache.kafka.common.record.Records;
+import org.apache.kafka.common.utils.MessageID;
 import org.apache.kafka.common.utils.ProducerIdAndEpoch;
 
 import java.nio.ByteBuffer;
@@ -201,13 +202,13 @@ public class FetchResponse extends AbstractResponse {
 
 
     //hsagar
-    public static List<MemoryRecords> recordsOrFailUsingOrder(HashMap<ProducerIdAndEpoch, MemoryRecords> memRecords , List<FetchResponseData.ProducerIDEpoch> msgOrders)
+    public static List<MemoryRecords> recordsOrFailUsingOrder(HashMap<MessageID, MemoryRecords> memRecords , List<FetchResponseData.FollowerSyncData> msgOrders)
     {
         List<MemoryRecords> recordsList = new ArrayList<>();
-        for(FetchResponseData.ProducerIDEpoch producerIDEpoch : msgOrders)
+        for(FetchResponseData.FollowerSyncData syncData : msgOrders)
         {
-            short id = (short) producerIDEpoch.producerEpoch();
-            ProducerIdAndEpoch newKey = new ProducerIdAndEpoch( producerIDEpoch.producerID() , id );
+            MessageID newKey = new MessageID( syncData.producerID() , syncData.producerEpoch() ,
+                        syncData.sequenceBegin() , syncData.sequenceEnd() );
             if(memRecords.containsKey(newKey))
             {
                 MemoryRecords record = memRecords.get(newKey);

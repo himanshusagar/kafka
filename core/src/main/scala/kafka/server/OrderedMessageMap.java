@@ -2,12 +2,12 @@ package kafka.server;
 import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.common.internals.Topic;
 import org.apache.kafka.common.record.MemoryRecords;
-import org.apache.kafka.common.utils.ProducerIdAndEpoch;
+import org.apache.kafka.common.utils.MessageID;
 import java.util.HashMap;
 
 public class OrderedMessageMap
 {
-    private HashMap<TopicPartition , HashMap<ProducerIdAndEpoch , MemoryRecords> > hMap;
+    private HashMap<TopicPartition , HashMap<MessageID , MemoryRecords> > hMap;
 
     public void printf()
     {
@@ -15,9 +15,9 @@ public class OrderedMessageMap
         for(TopicPartition key : hMap.keySet())
         {
             System.out.println("Out = "  + key + " Begin" );
-            HashMap<ProducerIdAndEpoch , MemoryRecords> inMap = hMap.get(key);
+            HashMap<MessageID , MemoryRecords> inMap = hMap.get(key);
 
-            for (ProducerIdAndEpoch key2 : inMap.keySet())
+            for (MessageID key2 : inMap.keySet())
             {
                 System.out.println("--- Key = " +  key2 + " Value = " + inMap.get(key2) );
             }
@@ -33,7 +33,7 @@ public class OrderedMessageMap
     {
         return hMap.containsKey(key);
     }
-    public MemoryRecords get(TopicPartition key, ProducerIdAndEpoch producerIdAndEpoch)
+    public MemoryRecords get(TopicPartition key, MessageID producerIdAndEpoch)
     {
         if( inMap(key, producerIdAndEpoch) )
         {
@@ -42,24 +42,24 @@ public class OrderedMessageMap
         return MemoryRecords.EMPTY;
     }
 
-    public HashMap<ProducerIdAndEpoch , MemoryRecords> get(TopicPartition key)
+    public HashMap<MessageID , MemoryRecords> get(TopicPartition key)
     {
         if( !hMap.containsKey(key) )
             hMap.put(key, new HashMap<>() );
         return hMap.get(key);
     }
 
-    public void put(TopicPartition key, ProducerIdAndEpoch producerIdAndEpoch , MemoryRecords message)
+    public void put(TopicPartition key, MessageID producerIdAndEpoch , MemoryRecords message)
     {
         if( !inMap(key) )
             hMap.put(key, new HashMap<>() );
-        HashMap<ProducerIdAndEpoch , MemoryRecords> internalMap = hMap.get(key);
+        HashMap<MessageID , MemoryRecords> internalMap = hMap.get(key);
         internalMap.put(producerIdAndEpoch , message);
         hMap.put(key , internalMap);
         System.out.println("From Put:::::::::");
         printf();
     }
-    public boolean inMap(TopicPartition key, ProducerIdAndEpoch producerIdAndEpoch)
+    public boolean inMap(TopicPartition key, MessageID producerIdAndEpoch)
     {
         if( hMap.containsKey(key) )
             return hMap.get(key).containsKey(producerIdAndEpoch);

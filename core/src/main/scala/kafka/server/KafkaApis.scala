@@ -69,7 +69,7 @@ import org.apache.kafka.common.resource.ResourceType._
 import org.apache.kafka.common.resource.{Resource, ResourceType}
 import org.apache.kafka.common.security.auth.{KafkaPrincipal, SecurityProtocol}
 import org.apache.kafka.common.security.token.delegation.{DelegationToken, TokenInformation}
-import org.apache.kafka.common.utils.{ProducerIdAndEpoch, Time}
+import org.apache.kafka.common.utils.{MessageID, ProducerIdAndEpoch, Time}
 import org.apache.kafka.common.{Node, TopicPartition, Uuid}
 import org.apache.kafka.server.authorizer._
 
@@ -552,7 +552,11 @@ class KafkaApis(val requestChannel: RequestChannel,
       memoryRecords.batches.forEach{ batch =>
         // akshatgit follower side map without order filling aka black magic.
         if (batch.hasProducerId){
-          OrderedMessageMapSingleton.hMap.put(topicPartition, new ProducerIdAndEpoch(batch.producerId(), batch.producerEpoch()), memoryRecords)
+          OrderedMessageMapSingleton.hMap.put(topicPartition, new MessageID(batch.producerId(),
+            batch.producerEpoch(),
+            batch.baseSequence(),
+            batch.lastSequence()
+          ), memoryRecords)
           info("[hsagar] Inside Follower : handleProduceFollowerRequest : " + OrderedMessageMapSingleton.hMap.length()
             + " topicPartition : " + topicPartition +  OrderedMessageMapSingleton.hMap.get(topicPartition).size() );
 
@@ -597,7 +601,8 @@ class KafkaApis(val requestChannel: RequestChannel,
 
       memoryRecords.batches.forEach{ batch =>
         if (batch.hasProducerId){
-          OrderedListMapSingleton.hMap.put(topicPartition, new ProducerIdAndEpoch(batch.producerId(), batch.producerEpoch()) )
+          OrderedListMapSingleton.hMap.put(topicPartition, new MessageID(batch.producerId(), batch.producerEpoch() ,
+            batch.baseSequence() , batch.lastSequence() ) )
         }
       }
 

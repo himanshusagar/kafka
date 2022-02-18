@@ -1,7 +1,7 @@
 package kafka.server;
 import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.common.message.FetchResponseData;
-import org.apache.kafka.common.utils.ProducerIdAndEpoch;
+import org.apache.kafka.common.utils.MessageID;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -9,7 +9,7 @@ import java.util.HashMap;
 
 public class OrderedListMap
 {
-    private HashMap<TopicPartition , List<ProducerIdAndEpoch> > hMap;
+    private HashMap<TopicPartition , List<MessageID> > hMap;
 
     public OrderedListMap()
     {
@@ -24,23 +24,25 @@ public class OrderedListMap
     {
         return hMap.size();
     }
-    public List<FetchResponseData.ProducerIDEpoch> getProducerIDEpoch(TopicPartition key, int offset)
+    public List<FetchResponseData.FollowerSyncData> getProducerIDEpoch(TopicPartition key, int offset)
     {
 
-        List<FetchResponseData.ProducerIDEpoch> output = new ArrayList<>();
-        List<ProducerIdAndEpoch> tmp = get(key);
+        List<FetchResponseData.FollowerSyncData> output = new ArrayList<>();
+        List<MessageID> tmp = get(key);
         for( int i = offset; i< tmp.size(); i++)
         {
-            ProducerIdAndEpoch pIE = tmp.get(i);
-            FetchResponseData.ProducerIDEpoch obj = new FetchResponseData.ProducerIDEpoch();
-            obj.setProducerEpoch(pIE.epoch);
+            MessageID pIE = tmp.get(i);
+            FetchResponseData.FollowerSyncData obj = new FetchResponseData.FollowerSyncData();
+            obj.setProducerEpoch(pIE.producerEpoch);
             obj.setProducerID(pIE.producerId);
+            obj.setSequenceBegin(pIE.sequenceBegin);
+            obj.setSequenceEnd(pIE.sequenceBegin);
             output.add( obj );
         }
         return output;
     }
 
-    public void put(TopicPartition key, ProducerIdAndEpoch producerIdAndEpoch)
+    public void put(TopicPartition key, MessageID producerIdAndEpoch)
     {
         if( !inMap(key) )
             hMap.put(key, new ArrayList<>());
@@ -51,7 +53,7 @@ public class OrderedListMap
 //        }
         hMap.get(key).add(producerIdAndEpoch);
     }
-    public List<ProducerIdAndEpoch> get(TopicPartition key)
+    public List<MessageID> get(TopicPartition key)
     {
         if(inMap(key))
             return hMap.get(key);

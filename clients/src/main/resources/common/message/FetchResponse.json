@@ -57,14 +57,15 @@
       { "name": "TopicId", "type": "uuid", "versions": "13+", "ignorable": true, "about": "The unique topic ID"},
       { "name": "Partitions", "type": "[]PartitionData", "versions": "0+",
         "about": "The topic partitions.", "fields": [
-        { "name": "MessageOrders", "type": "[]ProducerIDEpoch", "versions": "0+",
+        { "name": "MessageOrders", "type": "[]FollowerSyncData", "versions": "0+",
           "about": "Class defining messageID in the form of producer epoch and producer ID.",
           "fields": [
-            { "name": "ShellRecord", "type": "records", "versions": "0+", "nullableVersions": "0+"},
             { "name": "FetchOffset", "type": "int64", "versions": "0+", "default": "-1" },
             { "name": "LeaderEpoch", "type": "int64", "versions": "0+", "default": "-1" },
             { "name": "ProducerEpoch", "type": "int64", "versions": "0+", "default": "-1" },
-            { "name": "ProducerID", "type": "int64", "versions": "0+", "default": "-1" }
+            { "name": "ProducerID", "type": "int64", "versions": "0+", "default": "-1" },
+            { "name": "SequenceBegin", "type": "int64", "versions": "0+", "default": "-1" },
+            { "name": "SequenceEnd", "type": "int64", "versions": "0+", "default": "-1" }
           ]},
         { "name": "PartitionIndex", "type": "int32", "versions": "0+",
           "about": "The partition index." },
