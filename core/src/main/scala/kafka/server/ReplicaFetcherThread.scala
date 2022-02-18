@@ -174,6 +174,8 @@ class ReplicaFetcherThread(name: String,
     val partition = replicaMgr.getPartitionOrException(topicPartition)
     val log = partition.localLogOrException
     //follower already batch
+    OrderedMessageMapSingleton.hMap.printf();
+
     val hMapForTP = OrderedMessageMapSingleton.hMap.get(topicPartition);
     // got it from leader
     val msgOrders = partitionData.messageOrders;
