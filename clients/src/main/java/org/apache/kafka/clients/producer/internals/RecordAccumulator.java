@@ -658,11 +658,14 @@ public final class RecordAccumulator {
 
     private List<ProducerBatch> drainBatchesForOneNodeAkshat(Cluster cluster, Node node, int maxSize, long now) {
         int size = 0;
-        //List<PartitionInfo> partsOld = cluster.partitionsForNode(node.id());
+        List<PartitionInfo> parts = cluster.partitionsForNode(node.id());
         //hsagar
-        List<PartitionInfo> parts = cluster.partitionsForTopic("test3");
+        //List<PartitionInfo> parts = cluster.partitionsForTopic("test3");
 
         List<ProducerBatch> ready = new ArrayList<>();
+
+        if( parts.isEmpty() )
+            return ready;
         /* to make starvation less likely this loop doesn't start at 0 */
         int start = drainIndex = drainIndex % parts.size();
         do {
