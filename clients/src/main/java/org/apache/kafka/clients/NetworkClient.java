@@ -282,7 +282,7 @@ public class NetworkClient implements KafkaClient {
      */
     @Override
     public boolean ready(Node node, long now) {
-        log.info("ready() called for node: {}", node.id());
+        //log.info("ready() called for node: {}", node.id());
         if (node.isEmpty())
             throw new IllegalArgumentException("Cannot connect to empty node " + node);
 
