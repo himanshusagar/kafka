@@ -174,15 +174,15 @@ class ReplicaFetcherThread(name: String,
     val partition = replicaMgr.getPartitionOrException(topicPartition)
     val log = partition.localLogOrException
     //follower already batch
-    OrderedMessageMapSingleton.hMap.printf();
+    //OrderedMessageMapSingleton.hMap.printf();
 
     val hMapForTP = OrderedMessageMapSingleton.hMap.get(topicPartition);
     // got it from leader
     val msgOrders = partitionData.messageOrders;
     val recordsList = FetchResponse.recordsOrFailUsingOrder(hMapForTP , msgOrders );
     var logAppendInfo:Option[LogAppendInfo] = None
-    info("[Akshat]MessageOrder array size "+recordsList.size())
-    info("[Akshat]processPartitionData FetchOffset"+fetchOffset)
+    //info("[Akshat]MessageOrder array size "+recordsList.size())
+    //info("[Akshat]processPartitionData FetchOffset"+fetchOffset)
     // Old cold here :
    // val records = toMemoryRecords(FetchResponse.recordsOrFail(partitionData));
 

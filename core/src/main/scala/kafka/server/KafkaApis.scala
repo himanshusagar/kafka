@@ -895,7 +895,7 @@ class KafkaApis(val requestChannel: RequestChannel,
         if (data.isReassignmentFetch) reassigningPartitions.add(tp)
 
         val offset = fetchContext.getFetchOffset(tp).get
-        info("OrderedListMapSingleton Size: "+ OrderedListMapSingleton)
+        //info("OrderedListMapSingleton Size: "+ OrderedListMapSingleton)
         val listArray = OrderedListMapSingleton.hMap.getProducerIDEpoch(tp, offset.toInt)
         val partitionData = new FetchResponseData.PartitionData()
           .setPartitionIndex(tp.partition)
@@ -908,8 +908,8 @@ class KafkaApis(val requestChannel: RequestChannel,
           .setPreferredReadReplica(data.preferredReadReplica.getOrElse(FetchResponse.INVALID_PREFERRED_REPLICA_ID))
           .setMessageOrders(listArray)
 
-        info("[hsagar] Inside Leader : List size: " + OrderedListMapSingleton.hMap.get(tp).size())
-        info("[hsagar] Inside Leader : processResponseCallback MessageOrder Size OrderedListMapSingleton " + listArray.size() + " offset: "+ offset)
+        //info("[hsagar] Inside Leader : List size: " + OrderedListMapSingleton.hMap.get(tp).size())
+        //info("[hsagar] Inside Leader : processResponseCallback MessageOrder Size OrderedListMapSingleton " + listArray.size() + " offset: "+ offset)
 
         data.divergingEpoch.foreach(partitionData.setDivergingEpoch)
 
