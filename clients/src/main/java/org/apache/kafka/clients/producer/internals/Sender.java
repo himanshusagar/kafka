@@ -941,7 +941,7 @@ public class Sender implements Runnable {
 
                     RequestCompletionHandler callback = response -> handleFollowerProduceResponse(response, recordsByPartition, time.milliseconds());
 
-                    ClientRequest clientRequestFollower = client.newClientRequest(Integer.toString(followerID), requestBuilder, now, acks != 0,
+                    ClientRequest clientRequestFollower = client.newClientRequest(Integer.toString(followerID), requestBuilder, now, false,
                             requestTimeoutMs, callback);
                     client.send(clientRequestFollower, now);
                     log.info("Sent produce request to followers {}: {}", Integer.toString(followerID), requestBuilder);
