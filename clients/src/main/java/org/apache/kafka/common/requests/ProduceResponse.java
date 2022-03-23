@@ -16,6 +16,7 @@
  */
 package org.apache.kafka.common.requests;
 
+import com.fasterxml.jackson.databind.JsonSerializer;
 import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.common.message.ProduceResponseData;
 import org.apache.kafka.common.protocol.ApiKeys;
@@ -130,6 +131,10 @@ public class ProduceResponse extends AbstractResponse {
         public long logStartOffset;
         public List<RecordError> recordErrors;
         public String errorMessage;
+
+        public PartitionResponse() {
+            this.error = Errors.NONE;
+        }
 
         public PartitionResponse(Errors error) {
             this(error, INVALID_OFFSET, RecordBatch.NO_TIMESTAMP, INVALID_OFFSET);

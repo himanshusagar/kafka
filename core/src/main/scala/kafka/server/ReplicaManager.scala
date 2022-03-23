@@ -560,6 +560,55 @@ class ReplicaManager(val config: KafkaConfig,
 
   def tryCompleteActions(): Unit = actionQueue.tryCompleteActions()
 
+  def appendRecordsFollower(timeout: Long,
+                    requiredAcks: Short,
+                    internalTopicsAllowed: Boolean,
+                    origin: AppendOrigin,
+                    entriesPerPartition: Map[TopicPartition, MemoryRecords],
+                    responseCallback: Map[TopicPartition, PartitionResponse] => Unit,
+//                    delayedProduceLock: Option[Lock] = None,
+                    recordConversionStatsCallback: Map[TopicPartition, RecordConversionStats] => Unit = _ => (),
+                    requestLocal: RequestLocal = RequestLocal.NoCaching): Unit = {
+    if (isValidRequiredAcks(requiredAcks)) {
+      val sTime = time.milliseconds
+      //  TODO: create this map
+      //      val localDummyMap = entriesPerPartition.map{ case (topicPartition, memoryRecords) =>
+      //        tp -> TopicPartition(
+      //        )
+      //
+      //      }
+      //      val localProduceResults = appendToLocalLog(internalTopicsAllowed = internalTopicsAllowed,
+      //        origin, entriesPerPartition, requiredAcks, requestLocal)
+
+      debug("Produce request to follower in %d ms".format(time.milliseconds - sTime))
+
+      val produceStatus = entriesPerPartition.map { case (topicPartition, _) =>
+        topicPartition -> ProducePartitionStatus(
+          0 + 1, // required offset
+          new PartitionResponse()
+        ) // response status
+      }
+      // we can respond immediately
+      val produceResponseStatus = produceStatus.map { case (k, status) => k -> status.responseStatus }
+      responseCallback(produceResponseStatus)
+
+//      else
+//      {
+//        // If required.acks is outside accepted range, something is wrong with the client
+//        // Just return an error and don't handle the request at all
+//        val responseStatus = entriesPerPartition.map { case (topicPartition, _) =>
+//          topicPartition -> new PartitionResponse(
+//            Errors.INVALID_REQUIRED_ACKS,
+//            LogAppendInfo.UnknownLogAppendInfo.firstOffset.map(_.messageOffset).getOrElse(-1),
+//            RecordBatch.NO_TIMESTAMP,
+//            LogAppendInfo.UnknownLogAppendInfo.logStartOffset
+//          )
+//        }
+//        responseCallback(responseStatus)
+//      }
+    }
+  }
+
   /**
    * Append messages to leader replicas of the partition, and wait for them to be replicated to other replicas;
    * the callback function will be triggered either when timeout or the required acks are satisfied;

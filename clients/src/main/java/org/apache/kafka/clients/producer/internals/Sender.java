@@ -934,14 +934,14 @@ public class Sender implements Runnable {
                     //Creating different request for followers
                     ProduceFollowerRequest.Builder requestBuilder = ProduceFollowerRequest.forMagic(minUsedMagic,
                             new ProduceFollowerRequestData()
-                                    .setAcks((short) 0)
+                                    .setAcks((short) 1)
                                     .setTimeoutMs(timeout)
 //                                    .setTransactionalId(transactionalId)
                                     .setTopicData(tpd2));
 
                     RequestCompletionHandler callback = response -> handleFollowerProduceResponse(response, recordsByPartition, time.milliseconds());
 
-                    ClientRequest clientRequestFollower = client.newClientRequest(Integer.toString(followerID), requestBuilder, now, false,
+                    ClientRequest clientRequestFollower = client.newClientRequest(Integer.toString(followerID), requestBuilder, now, true,
                             requestTimeoutMs, callback);
                     client.send(clientRequestFollower, now);
                     log.info("Sent produce request to followers {}: {}", Integer.toString(followerID), requestBuilder);
