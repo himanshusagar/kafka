@@ -176,7 +176,7 @@ final class InFlightRequests {
             String nodeId = requestEntry.getKey();
             Deque<NetworkClient.InFlightRequest> deque = requestEntry.getValue();
             //hsagar
-            if (false && hasExpiredRequest(now, deque))
+            if (hasExpiredRequest(now, deque))
                 nodeIds.add(nodeId);
         }
         return nodeIds;
