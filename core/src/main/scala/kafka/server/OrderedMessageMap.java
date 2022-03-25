@@ -56,8 +56,8 @@ public class OrderedMessageMap
         HashMap<MessageID , MemoryRecords> internalMap = hMap.get(key);
         internalMap.put(producerIdAndEpoch , message);
         hMap.put(key , internalMap);
-        //System.out.println("From Put:::::::::");
-        //printf();
+        System.out.println("From Put:::::::::");
+        printf();
     }
     public boolean inMap(TopicPartition key, MessageID producerIdAndEpoch)
     {
