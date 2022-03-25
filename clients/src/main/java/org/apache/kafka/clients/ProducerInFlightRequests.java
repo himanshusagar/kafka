@@ -170,7 +170,7 @@ final class ProducerInFlightRequests {
             String nodeId = requestEntry.getKey();
             Deque<ProducerNetworkClient.InFlightRequest> deque = requestEntry.getValue();
             //hsagar
-            if (false && hasExpiredRequest(now, deque))
+            if (hasExpiredRequest(now, deque))
                 nodeIds.add(nodeId);
         }
         return nodeIds;
