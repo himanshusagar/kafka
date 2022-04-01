@@ -535,7 +535,7 @@ class KafkaApis(val requestChannel: RequestChannel,
    * Handle a produce request on follower
    */
   def handleProduceFollowerRequest(request: RequestChannel.Request, requestLocal: RequestLocal): Unit = {
-    info("[Akshat]From follower produce handler")
+//    info("[Akshat]From follower produce handler")
     val produceRequest = request.body[ProduceFollowerRequest]
     val requestSize = request.sizeInBytes
     if (RequestUtils.hasTransactionalRecords(produceRequest)) {
@@ -565,8 +565,8 @@ class KafkaApis(val requestChannel: RequestChannel,
             batch.baseSequence(),
             batch.lastSequence()
           ), memoryRecords)
-          info("[hsagar] Inside Follower : handleProduceFollowerRequest : " + OrderedMessageMapSingleton.hMap.length()
-            + " topicPartition : " + topicPartition +  OrderedMessageMapSingleton.hMap.get(topicPartition).size() );
+//          info("[hsagar] Inside Follower : handleProduceFollowerRequest : " + OrderedMessageMapSingleton.hMap.length()
+//            + " topicPartition : " + topicPartition +  OrderedMessageMapSingleton.hMap.get(topicPartition).size() );
 
 
         }

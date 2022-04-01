@@ -869,11 +869,15 @@ public class Sender implements Runnable {
                 // Get leader id
                 if (partitionInfo.leader() == follower){
                     leaderID = follower.id();
+                    continue;
                 }
                 followers.add(follower.id());
                 log.info("[Producer Log]Adding follower; Topic: {}, follower: {}", partitionInfo.topic(), follower.host());
 //                client.ready(follower, now);
             }
+            // akshatgit
+            // adding leader at the end
+            followers.add(leaderID);
             MemoryRecords records = batch.records();
 
             // down convert if necessary to the minimum magic used. In general, there can be a delay between the time

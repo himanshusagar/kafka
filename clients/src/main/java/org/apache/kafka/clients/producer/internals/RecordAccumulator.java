@@ -458,19 +458,19 @@ public final class RecordAccumulator {
 
                     PartitionInfo infoForAll = cluster.partitionsByTopicPartition.get(part);
 
-                    int a = 0;
-                    for (Node follower : infoForAll.replicas())
-                    {
-                        readyNodes.add(follower);
-                        a++;
-                    }
+//                    int a = 0;
+//                    for (Node follower : infoForAll.replicas())
+//                    {
+//                        readyNodes.add(follower);
+//                        a++;
+//                    }
 
                     if (leader == null) {
                         // This is a partition for which leader is not known, but messages are available to send.
                         // Note that entries are currently not removed from batches when deque is empty.
                         unknownLeaderTopics.add(part.topic());
                     } else if (
-                            //!readyNodes.contains(leader) &&
+//                            !readyNodes.contains(leader) &&
                             // hsagar
                             !isMuted(part)) {
                         long waitedTimeMs = batch.waitedTimeMs(nowMs);
@@ -486,7 +486,12 @@ public final class RecordAccumulator {
                             || flushInProgress()
                             || transactionCompleting;
                         if (sendable && !backingOff) {
-                            readyNodes.add(leader);
+                            int a = 0;
+                            for (Node follower : infoForAll.replicas())
+                            {
+                                readyNodes.add(follower);
+                                a++;
+                            }
                         } else {
                             long timeLeftMs = Math.max(timeToWaitMs - waitedTimeMs, 0);
                             // Note that this results in a conservative estimate since an un-sendable partition may have
