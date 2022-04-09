@@ -173,6 +173,7 @@ class ReplicaFetcherThread(name: String,
     val logTrace = isTraceEnabled
     val partition = replicaMgr.getPartitionOrException(topicPartition)
     val log = partition.localLogOrException
+    var fetchOffsets = fetchOffset
     //follower already batch
     //OrderedMessageMapSingleton.hMap.printf();
 
@@ -185,6 +186,7 @@ class ReplicaFetcherThread(name: String,
     //info("[Akshat]processPartitionData FetchOffset"+fetchOffset)
     // Old cold here :
    // val records = toMemoryRecords(FetchResponse.recordsOrFail(partitionData));
+    info("Records list: "+ recordsList.size())
 
     for( i <- 0 until recordsList.size())
       {
@@ -192,9 +194,9 @@ class ReplicaFetcherThread(name: String,
         val records = recordsList.get(i);
         maybeWarnIfOversizedRecords(records, topicPartition)
 
-        if (fetchOffset != log.logEndOffset)
+        if (fetchOffsets != log.logEndOffset)
           throw new IllegalStateException("Offset mismatch for partition %s: fetched offset = %d, log end offset = %d.".format(
-            topicPartition, fetchOffset, log.logEndOffset))
+            topicPartition, fetchOffsets, log.logEndOffset))
 
         if (logTrace)
           trace("Follower has replica log end offset %d for partition %s. Received %d messages and leader hw %d"
@@ -206,6 +208,7 @@ class ReplicaFetcherThread(name: String,
         }
         // Append the leader's messages to the log
         logAppendInfo = partition.appendRecordsToFollowerOrFutureReplica(records, isFuture = false)
+        fetchOffsets += log.logEndOffset
 
         if (logTrace)
           trace("Follower has replica log end offset %d after appending %d bytes of messages for partition %s"
