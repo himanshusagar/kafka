@@ -187,11 +187,9 @@ class ReplicaFetcherThread(name: String,
     //info("[Akshat]processPartitionData FetchOffset"+fetchOffset)
     // Old cold here :
    // val records = toMemoryRecords(FetchResponse.recordsOrFail(partitionData));
-
+    var log = partition.localLogOrException
     for( i <- 0 until recordsList.size())
       {
-        val log = partition.localLogOrException
-
         //info("Records iterator : "+i)
         val records = recordsList.get(i);
         maybeWarnIfOversizedRecords(records, topicPartition)
@@ -232,6 +230,8 @@ class ReplicaFetcherThread(name: String,
           brokerTopicStats.updateReassignmentBytesIn(records.sizeInBytes)
 
         brokerTopicStats.updateReplicationBytesIn(records.sizeInBytes)
+
+        log = partition.localLogOrException
         fetchOffsets = log.logEndOffset
       }
    logAppendInfo
