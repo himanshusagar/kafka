@@ -34,6 +34,8 @@ trait MessageReader {
 
   def readMessage(): ProducerRecord[Array[Byte], Array[Byte]]
 
+  def messageFlood(): ProducerRecord[Array[Byte], Array[Byte]]
+
   def close(): Unit = {}
 
 }

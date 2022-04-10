@@ -19,7 +19,7 @@ package kafka.tools
 
 import java.io._
 import java.nio.charset.StandardCharsets
-import java.util.Properties
+import java.util.{Properties, Random}
 import joptsimple.{OptionException, OptionParser, OptionSet}
 import kafka.common._
 import kafka.message._
@@ -47,7 +47,12 @@ object ConsoleProducer {
 
         var record: ProducerRecord[Array[Byte], Array[Byte]] = null
         do {
-          record = reader.readMessage()
+          if (config.flood){
+            record = reader.messageFlood()
+          }
+          else {
+            record = reader.readMessage()
+          }
           if (record != null)
             send(producer, record, config.sync)
         } while (record != null)
@@ -135,6 +140,8 @@ object ConsoleProducer {
       .describedAs("server to connect to")
       .ofType(classOf[String])
     val syncOpt = parser.accepts("sync", "If set message send requests to the brokers are synchronously, one at a time as they arrive.")
+    val floodOpt = parser.accepts("flood", "If set console producer will start sending random messages")
+
     val compressionCodecOpt = parser.accepts("compression-codec", "The compression codec: either 'none', 'gzip', 'snappy', 'lz4', or 'zstd'." +
                                                                   "If specified without value, then it defaults to 'gzip'")
                                     .withOptionalArg()
@@ -237,6 +244,8 @@ object ConsoleProducer {
     ToolsUtils.validatePortOrDie(parser, brokerHostsAndPorts)
 
     val sync = options.has(syncOpt)
+    val flood = options.has(floodOpt)
+
     val compressionCodecOptionValue = options.valueOf(compressionCodecOpt)
     val compressionCodec = if (options.has(compressionCodecOpt))
                              if (compressionCodecOptionValue == null || compressionCodecOptionValue.isEmpty)
@@ -278,15 +287,15 @@ object ConsoleProducer {
       reader = new BufferedReader(new InputStreamReader(inputStream, StandardCharsets.UTF_8))
     }
 
-    //    override def readMessage() = {
-    //      Thread.sleep(1);
-    //      val b = new Array[Byte](1024)
-    //      val randObj = new Random();
-    //
-    //      lineNumber += 1
-    //      randObj.nextBytes(b);
-    //      new ProducerRecord(topic, b)
-    //    }
+    override def messageFlood() = {
+      Thread.sleep(1);
+      val b = new Array[Byte](1024)
+      val randObj = new Random();
+
+      lineNumber += 1
+      randObj.nextBytes(b);
+      new ProducerRecord(topic, b)
+    }
 
     override def readMessage() = {
       lineNumber += 1
