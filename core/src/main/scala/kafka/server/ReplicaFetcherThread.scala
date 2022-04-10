@@ -19,7 +19,6 @@ package kafka.server
 
 import java.util.Collections
 import java.util.Optional
-
 import kafka.api._
 import kafka.cluster.BrokerEndPoint
 import kafka.log.{LeaderOffsetIncremented, LogAppendInfo}
@@ -172,7 +171,7 @@ class ReplicaFetcherThread(name: String,
                                     partitionData: FetchData): Option[LogAppendInfo] = {
     val logTrace = isTraceEnabled
     val partition = replicaMgr.getPartitionOrException(topicPartition)
-    val log = partition.localLogOrException
+    var fetchOffsets = fetchOffset
     //follower already batch
     //OrderedMessageMapSingleton.hMap.printf();
 
@@ -181,6 +180,9 @@ class ReplicaFetcherThread(name: String,
     val msgOrders = partitionData.messageOrders;
     val recordsList = FetchResponse.recordsOrFailUsingOrder(hMapForTP , msgOrders );
     var logAppendInfo:Option[LogAppendInfo] = None
+    var firstAppendInfo:Option[LogAppendInfo] = None
+
+
     //info("[Akshat]MessageOrder array size "+recordsList.size())
     //info("[Akshat]processPartitionData FetchOffset"+fetchOffset)
     // Old cold here :
@@ -188,13 +190,15 @@ class ReplicaFetcherThread(name: String,
 
     for( i <- 0 until recordsList.size())
       {
-        info("Records iterator : "+i)
+        val log = partition.localLogOrException
+
+        //info("Records iterator : "+i)
         val records = recordsList.get(i);
         maybeWarnIfOversizedRecords(records, topicPartition)
 
-        if (fetchOffset != log.logEndOffset)
+        if (fetchOffsets != log.logEndOffset)
           throw new IllegalStateException("Offset mismatch for partition %s: fetched offset = %d, log end offset = %d.".format(
-            topicPartition, fetchOffset, log.logEndOffset))
+            topicPartition, fetchOffsets, log.logEndOffset))
 
         if (logTrace)
           trace("Follower has replica log end offset %d for partition %s. Received %d messages and leader hw %d"
@@ -205,7 +209,50 @@ class ReplicaFetcherThread(name: String,
           batch.setPartitionLeaderEpoch(partition.getLeaderEpoch);
         }
         // Append the leader's messages to the log
+
+        /*
+        case class LogAppendInfo(var firstOffset: Option[LogOffsetMetadata],
+                         var lastOffset: Long,
+                         var lastLeaderEpoch: Option[Int],
+                         var maxTimestamp: Long,
+                         var offsetOfMaxTimestamp: Long,
+                         var logAppendTime: Long,
+                         var logStartOffset: Long,
+                         var recordConversionStats: RecordConversionStats,
+                         sourceCodec: CompressionCodec,
+                         targetCodec: CompressionCodec,
+                         shallowCount: Int,
+                         validBytes: Int,
+                         offsetsMonotonic: Boolean,
+                         lastOffsetOfFirstBatch: Long,
+                         recordErrors: Seq[RecordError] = List(),
+                         errorMessage: String = null,
+                         leaderHwChange: LeaderHwChange = LeaderHwChange.None)
+         */
+
         logAppendInfo = partition.appendRecordsToFollowerOrFutureReplica(records, isFuture = false)
+
+
+        if(i == 0)
+          firstAppendInfo = logAppendInfo
+
+//        if(i == 0)
+//          mergedAppendInfo = logAppendInfo.get
+//        else
+//        {
+//          mergedAppendInfo.lastOffset = logAppendInfo.get.lastOffset;
+//          mergedAppendInfo.lastLeaderEpoch = logAppendInfo.get.lastLeaderEpoch;
+//          mergedAppendInfo.maxTimestamp = logAppendInfo.get.maxTimestamp;
+//          mergedAppendInfo.offsetOfMaxTimestamp = logAppendInfo.get.offsetOfMaxTimestamp;
+//          mergedAppendInfo.logAppendTime = logAppendInfo.get.logAppendTime;
+//          mergedAppendInfo.validBytes += logAppendInfo.get.validBytes;
+//        }
+
+//        logAppendInfo = if (mergedAppendInfo != null) {
+//          Option(mergedAppendInfo)
+//        } else {
+//          logAppendInfo
+//        }
 
         if (logTrace)
           trace("Follower has replica log end offset %d after appending %d bytes of messages for partition %s"
@@ -228,8 +275,16 @@ class ReplicaFetcherThread(name: String,
           brokerTopicStats.updateReassignmentBytesIn(records.sizeInBytes)
 
         brokerTopicStats.updateReplicationBytesIn(records.sizeInBytes)
+        fetchOffsets += log.logEndOffset
       }
 
+      if(firstAppendInfo != logAppendInfo)
+      {
+        val obj: LogAppendInfo = logAppendInfo.get
+        obj.firstOffset = firstAppendInfo.get.firstOffset;
+        obj.logStartOffset = firstAppendInfo.get.logStartOffset;
+        logAppendInfo = Option(obj)
+      }
    logAppendInfo
   }
 

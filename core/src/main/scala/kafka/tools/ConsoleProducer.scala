@@ -19,7 +19,7 @@ package kafka.tools
 
 import java.io._
 import java.nio.charset.StandardCharsets
-import java.util.{Properties, Random}
+import java.util.Properties
 import joptsimple.{OptionException, OptionParser, OptionSet}
 import kafka.common._
 import kafka.message._
@@ -278,40 +278,40 @@ object ConsoleProducer {
       reader = new BufferedReader(new InputStreamReader(inputStream, StandardCharsets.UTF_8))
     }
 
+    //    override def readMessage() = {
+    //      Thread.sleep(1);
+    //      val b = new Array[Byte](1024)
+    //      val randObj = new Random();
+    //
+    //      lineNumber += 1
+    //      randObj.nextBytes(b);
+    //      new ProducerRecord(topic, b)
+    //    }
+
     override def readMessage() = {
-      Thread.sleep(1);
-      val b = new Array[Byte](1024)
-      val randObj = new Random();
-
       lineNumber += 1
-      randObj.nextBytes(b);
-      new ProducerRecord(topic, b)
+      if (printPrompt)
+        print(">")
+      (reader.readLine(), parseKey) match {
+        case (null, _) => null
+        case (line, true) =>
+          line.indexOf(keySeparator) match {
+            case -1 =>
+              if (ignoreError) new ProducerRecord(topic, line.getBytes(StandardCharsets.UTF_8))
+              else throw new KafkaException(s"No key found on line $lineNumber: $line")
+            case n =>
+              val value = (if (n + keySeparator.size > line.size) "" else line.substring(n + keySeparator.size)).getBytes(StandardCharsets.UTF_8)
+              new ProducerRecord(topic, line.substring(0, n).getBytes(StandardCharsets.UTF_8), value)
+          }
+        case (line, false) =>
+          //          new ProducerRecord(topic, line.getBytes(StandardCharsets.UTF_8))
+          val value = line.getBytes(StandardCharsets.UTF_8);
+          for (a <- 1 to 10000) {
+            println("Value of a: " + a)
+            new ProducerRecord(topic, value)
+          }
+          new ProducerRecord(topic, value)
+      }
     }
-
-//    override def readMessage() = {
-//      lineNumber += 1
-//      if (printPrompt)
-//        print(">")
-//      (reader.readLine(), parseKey) match {
-//        case (null, _) => null
-//        case (line, true) =>
-//          line.indexOf(keySeparator) match {
-//            case -1 =>
-//              if (ignoreError) new ProducerRecord(topic, line.getBytes(StandardCharsets.UTF_8))
-//              else throw new KafkaException(s"No key found on line $lineNumber: $line")
-//            case n =>
-//              val value = (if (n + keySeparator.size > line.size) "" else line.substring(n + keySeparator.size)).getBytes(StandardCharsets.UTF_8)
-//              new ProducerRecord(topic, line.substring(0, n).getBytes(StandardCharsets.UTF_8), value)
-//          }
-//        case (line, false) =>
-////          new ProducerRecord(topic, line.getBytes(StandardCharsets.UTF_8))
-//          val value = line.getBytes(StandardCharsets.UTF_8);
-//          for( a <- 1 to 10000) {
-//            println("Value of a: " + a)
-//            new ProducerRecord(topic, value)
-//          }
-//          new ProducerRecord(topic, value)
-//      }
-//    }
   }
 }
