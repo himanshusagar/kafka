@@ -275,7 +275,7 @@ class ReplicaFetcherThread(name: String,
           brokerTopicStats.updateReassignmentBytesIn(records.sizeInBytes)
 
         brokerTopicStats.updateReplicationBytesIn(records.sizeInBytes)
-        fetchOffsets += log.logEndOffset
+        fetchOffsets = log.logEndOffset
       }
 
       if(firstAppendInfo != logAppendInfo)
