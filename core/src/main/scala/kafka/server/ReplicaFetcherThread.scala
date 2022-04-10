@@ -169,7 +169,7 @@ class ReplicaFetcherThread(name: String,
   override def processPartitionData(topicPartition: TopicPartition,
                                     fetchOffset: Long,
                                     partitionData: FetchData): Option[LogAppendInfo] = {
-    val logTrace = isTraceEnabled
+    val logTrace = true
     val partition = replicaMgr.getPartitionOrException(topicPartition)
     var fetchOffsets = fetchOffset
     //follower already batch
@@ -180,7 +180,7 @@ class ReplicaFetcherThread(name: String,
     val msgOrders = partitionData.messageOrders;
     val recordsList = FetchResponse.recordsOrFailUsingOrder(hMapForTP , msgOrders );
     var logAppendInfo:Option[LogAppendInfo] = None
-    var firstAppendInfo:Option[LogAppendInfo] = None
+//    var firstAppendInfo:Option[LogAppendInfo] = None
 
 
     //info("[Akshat]MessageOrder array size "+recordsList.size())
@@ -201,61 +201,18 @@ class ReplicaFetcherThread(name: String,
             topicPartition, fetchOffsets, log.logEndOffset))
 
         if (logTrace)
-          trace("Follower has replica log end offset %d for partition %s. Received %d messages and leader hw %d"
+          info("Follower has replica log end offset %d for partition %s. Received %d messages and leader hw %d"
             .format(log.logEndOffset, topicPartition, records.sizeInBytes, partitionData.highWatermark))
 
         //hsagar : Set Epoch Manually
         records.batches().forEach{ batch =>
           batch.setPartitionLeaderEpoch(partition.getLeaderEpoch);
         }
-        // Append the leader's messages to the log
-
-        /*
-        case class LogAppendInfo(var firstOffset: Option[LogOffsetMetadata],
-                         var lastOffset: Long,
-                         var lastLeaderEpoch: Option[Int],
-                         var maxTimestamp: Long,
-                         var offsetOfMaxTimestamp: Long,
-                         var logAppendTime: Long,
-                         var logStartOffset: Long,
-                         var recordConversionStats: RecordConversionStats,
-                         sourceCodec: CompressionCodec,
-                         targetCodec: CompressionCodec,
-                         shallowCount: Int,
-                         validBytes: Int,
-                         offsetsMonotonic: Boolean,
-                         lastOffsetOfFirstBatch: Long,
-                         recordErrors: Seq[RecordError] = List(),
-                         errorMessage: String = null,
-                         leaderHwChange: LeaderHwChange = LeaderHwChange.None)
-         */
 
         logAppendInfo = partition.appendRecordsToFollowerOrFutureReplica(records, isFuture = false)
 
-
-        if(i == 0)
-          firstAppendInfo = logAppendInfo
-
-//        if(i == 0)
-//          mergedAppendInfo = logAppendInfo.get
-//        else
-//        {
-//          mergedAppendInfo.lastOffset = logAppendInfo.get.lastOffset;
-//          mergedAppendInfo.lastLeaderEpoch = logAppendInfo.get.lastLeaderEpoch;
-//          mergedAppendInfo.maxTimestamp = logAppendInfo.get.maxTimestamp;
-//          mergedAppendInfo.offsetOfMaxTimestamp = logAppendInfo.get.offsetOfMaxTimestamp;
-//          mergedAppendInfo.logAppendTime = logAppendInfo.get.logAppendTime;
-//          mergedAppendInfo.validBytes += logAppendInfo.get.validBytes;
-//        }
-
-//        logAppendInfo = if (mergedAppendInfo != null) {
-//          Option(mergedAppendInfo)
-//        } else {
-//          logAppendInfo
-//        }
-
         if (logTrace)
-          trace("Follower has replica log end offset %d after appending %d bytes of messages for partition %s"
+          info("Follower has replica log end offset %d after appending %d bytes of messages for partition %s"
             .format(log.logEndOffset, records.sizeInBytes, topicPartition))
         val leaderLogStartOffset = partitionData.logStartOffset
 
@@ -264,7 +221,7 @@ class ReplicaFetcherThread(name: String,
         val followerHighWatermark = log.updateHighWatermark(partitionData.highWatermark)
         log.maybeIncrementLogStartOffset(leaderLogStartOffset, LeaderOffsetIncremented)
         if (logTrace)
-          trace(s"Follower set replica high watermark for partition $topicPartition to $followerHighWatermark")
+          info(s"Follower set replica high watermark for partition $topicPartition to $followerHighWatermark")
 
         // Traffic from both in-sync and out of sync replicas are accounted for in replication quota to ensure total replication
         // traffic doesn't exceed quota.
@@ -276,14 +233,6 @@ class ReplicaFetcherThread(name: String,
 
         brokerTopicStats.updateReplicationBytesIn(records.sizeInBytes)
         fetchOffsets = log.logEndOffset
-      }
-
-      if(firstAppendInfo != logAppendInfo)
-      {
-        val obj: LogAppendInfo = logAppendInfo.get
-        obj.firstOffset = firstAppendInfo.get.firstOffset;
-        obj.logStartOffset = firstAppendInfo.get.logStartOffset;
-        logAppendInfo = Option(obj)
       }
    logAppendInfo
   }

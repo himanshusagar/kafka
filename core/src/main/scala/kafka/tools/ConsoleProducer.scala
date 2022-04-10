@@ -304,13 +304,7 @@ object ConsoleProducer {
               new ProducerRecord(topic, line.substring(0, n).getBytes(StandardCharsets.UTF_8), value)
           }
         case (line, false) =>
-          //          new ProducerRecord(topic, line.getBytes(StandardCharsets.UTF_8))
-          val value = line.getBytes(StandardCharsets.UTF_8);
-          for (a <- 1 to 10000) {
-            println("Value of a: " + a)
-            new ProducerRecord(topic, value)
-          }
-          new ProducerRecord(topic, value)
+          new ProducerRecord(topic, line.getBytes(StandardCharsets.UTF_8))
       }
     }
   }
