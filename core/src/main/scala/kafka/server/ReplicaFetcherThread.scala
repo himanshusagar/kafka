@@ -197,7 +197,7 @@ class ReplicaFetcherThread(name: String,
     var log = partition.localLogOrException
     for( i <- 0 until recordsList.size())
       {
-        //info("Records iterator : "+i)
+        info("Records iterator : "+i)
         val records = recordsList.get(i);
         maybeWarnIfOversizedRecords(records, topicPartition)
 

@@ -288,7 +288,7 @@ object ConsoleProducer {
     }
 
     override def messageFlood() = {
-      Thread.sleep(1);
+      Thread.sleep(100);
       val b = new Array[Byte](1024)
       val randObj = new Random();
 
