@@ -366,6 +366,7 @@ abstract class AbstractFetcherThread(name: String,
                           logAppendInfo.lastLeaderEpoch)
                         partitionStates.updateAndMoveToEnd(topicPartition, newFetchState)
                         fetcherStats.byteRate.mark(validBytes)
+                        info("hsagarWaterMark fetcherLagStats lag to %d ValidBytes : %d hwm : %d %s".format(lag , validBytes, partitionData.highWatermark , newFetchState))
                       }
                     }
                     if (isTruncationOnFetchSupported) {

@@ -1841,11 +1841,11 @@ class ReplicaManager(val config: KafkaConfig,
                                        readResults: Seq[(TopicPartition, LogReadResult)]): Seq[(TopicPartition, LogReadResult)] = {
     readResults.map { case (topicPartition, readResult) =>
       val updatedReadResult = if (readResult.error != Errors.NONE) {
-        debug(s"Skipping update of fetch state for follower $followerId since the " +
+        info(s" hsagarWaterMark Skipping update of fetch state for follower $followerId since the " +
           s"log read returned error ${readResult.error}")
         readResult
       } else if (readResult.divergingEpoch.nonEmpty) {
-        debug(s"Skipping update of fetch state for follower $followerId since the " +
+        info(s"hsagarWaterMark Skipping update of fetch state for follower $followerId since the " +
           s"log read returned diverging epoch ${readResult.divergingEpoch}")
         readResult
       } else {
