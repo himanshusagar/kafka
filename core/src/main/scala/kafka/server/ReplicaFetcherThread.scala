@@ -21,6 +21,7 @@ import java.util.Collections
 import java.util.Optional
 import kafka.api._
 import kafka.cluster.BrokerEndPoint
+import kafka.log.LogAppendInfo.UnknownLogAppendInfo
 import kafka.log.{LeaderOffsetIncremented, LogAppendInfo}
 import kafka.server.AbstractFetcherThread.ReplicaFetch
 import kafka.server.AbstractFetcherThread.ResultWithPartitions
@@ -180,7 +181,9 @@ class ReplicaFetcherThread(name: String,
     val msgOrders = partitionData.messageOrders;
     val recordsList = FetchResponse.recordsOrFailUsingOrder(hMapForTP , msgOrders );
     var logAppendInfo:Option[LogAppendInfo] = None
-//    var firstAppendInfo:Option[LogAppendInfo] = None
+    //var firstAppendInfo:Option[LogAppendInfo] = None
+    var mergedAppendInfo:LogAppendInfo = UnknownLogAppendInfo
+
 
 
     //info("[Akshat]MessageOrder array size "+recordsList.size())
@@ -213,6 +216,25 @@ class ReplicaFetcherThread(name: String,
 
         logAppendInfo = partition.appendRecordsToFollowerOrFutureReplica(records, isFuture = false)
 
+        if(i == 0)
+          mergedAppendInfo = logAppendInfo.get
+        else
+        {
+          mergedAppendInfo.lastOffset = logAppendInfo.get.lastOffset;
+          mergedAppendInfo.lastLeaderEpoch = logAppendInfo.get.lastLeaderEpoch;
+          mergedAppendInfo.maxTimestamp = logAppendInfo.get.maxTimestamp;
+          mergedAppendInfo.offsetOfMaxTimestamp = logAppendInfo.get.offsetOfMaxTimestamp;
+          mergedAppendInfo.logAppendTime = logAppendInfo.get.logAppendTime;
+          mergedAppendInfo.validBytes += logAppendInfo.get.validBytes;
+        }
+
+        if (mergedAppendInfo != UnknownLogAppendInfo)
+        {
+           logAppendInfo = Option(mergedAppendInfo)
+        }
+
+
+
         if (logTrace)
           info("Follower has replica log end offset %d after appending %d bytes of messages for partition %s"
             .format(log.logEndOffset, records.sizeInBytes, topicPartition))
@@ -238,6 +260,23 @@ class ReplicaFetcherThread(name: String,
         log = partition.localLogOrException
         fetchOffsets = log.logEndOffset
       }
+
+//      if(firstAppendInfo != logAppendInfo)
+//      {
+//        val obj: LogAppendInfo = logAppendInfo.get
+//        obj.firstOffset = firstAppendInfo.get.firstOffset;
+//        obj.logStartOffset = firstAppendInfo.get.logStartOffset;
+//
+//        obj.lastOffset = logAppendInfo.get.lastOffset;
+//        obj.lastLeaderEpoch = logAppendInfo.get.lastLeaderEpoch;
+//        obj.maxTimestamp = logAppendInfo.get.maxTimestamp;
+//        obj.offsetOfMaxTimestamp = logAppendInfo.get.offsetOfMaxTimestamp;
+//        obj.logAppendTime = logAppendInfo.get.logAppendTime;
+//        obj.validBytes += logAppendInfo.get.validBytes;
+//
+//        logAppendInfo = Option(obj)
+//      }
+
    logAppendInfo
   }
 
