@@ -567,8 +567,6 @@ class KafkaApis(val requestChannel: RequestChannel,
           ), memoryRecords)
 //          info("[hsagar] Inside Follower : handleProduceFollowerRequest : " + OrderedMessageMapSingleton.hMap.length()
 //            + " topicPartition : " + topicPartition +  OrderedMessageMapSingleton.hMap.get(topicPartition).size() );
-
-
         }
       }
       if (!authorizedTopics.contains(topicPartition.topic))
@@ -648,31 +646,22 @@ class KafkaApis(val requestChannel: RequestChannel,
       }
     }
 
-    def processingStatsCallback(processingStats: FetchResponseStats): Unit = {
-      processingStats.forKeyValue { (tp, info) =>
-        updateRecordConversionStats(request, tp, info)
-      }
-    }
+//    def processingStatsCallback(processingStats: FetchResponseStats): Unit = {
+//      processingStats.forKeyValue { (tp, info) =>
+//        updateRecordConversionStats(request, tp, info)
+//      }
+//    }
 
     if (authorizedRequestInfo.isEmpty)
       sendResponseCallback(Map.empty)
     else {
-      val internalTopicsAllowed = request.header.clientId == AdminUtils.AdminClientId
+//      val internalTopicsAllowed = request.header.clientId == AdminUtils.AdminClientId
 
       // call the replica manager to append messages to the replicas
-      replicaManager.appendRecords(
-        timeout = produceRequest.timeout.toLong,
+      replicaManager.appendRecordsFollower(
         requiredAcks = produceRequest.acks,
-        internalTopicsAllowed = internalTopicsAllowed,
-        origin = AppendOrigin.Client,
         entriesPerPartition = authorizedRequestInfo,
-        requestLocal = requestLocal,
-        responseCallback = sendResponseCallback,
-        recordConversionStatsCallback = processingStatsCallback)
-
-      // if the request is put into the purgatory, it will have a held reference and hence cannot be garbage collected;
-      // hence we clear its data here in order to let GC reclaim its memory since it is already appended to log
-      produceRequest.clearPartitionRecords()
+        responseCallback = sendResponseCallback)
     }
     // akshatgit sending no-op response for ack=0
     // requestHelper.sendNoOpResponseExemptThrottle(request)

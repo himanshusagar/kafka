@@ -25,11 +25,7 @@ import org.apache.kafka.common.protocol.Errors;
 import org.apache.kafka.common.record.RecordBatch;
 
 import java.nio.ByteBuffer;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 import java.util.stream.Collectors;
 
 /**
@@ -133,6 +129,7 @@ public class ProduceResponse extends AbstractResponse {
         public String errorMessage;
 
         public PartitionResponse() {
+            this.recordErrors = new ArrayList<>();
             this.error = Errors.NONE;
         }
 
