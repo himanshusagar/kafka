@@ -59,4 +59,11 @@ public class OrderedListMap
             return hMap.get(key);
         return new ArrayList<>();
     }
+
+    public int size(TopicPartition key)
+    {
+        if(inMap(key))
+            return hMap.get(key).size();
+        return 0;
+    }
 }
