@@ -554,7 +554,7 @@ class Partition(val topicPartition: TopicPartition,
 
       val leaderLog = localLogOrException
       val leaderEpochStartOffset = leaderLog.logEndOffset
-      stateChangeLogger.info(s"Leader $topicPartition starts at leader epoch ${partitionState.leaderEpoch} from " +
+      info(s" stateChangeLogger Leader $topicPartition starts at leader epoch ${partitionState.leaderEpoch} from " +
         s"offset $leaderEpochStartOffset with high watermark ${leaderLog.highWatermark} " +
         s"ISR ${isr.mkString("[", ",", "]")} addingReplicas ${addingReplicas.mkString("[", ",", "]")} " +
         s"removingReplicas ${removingReplicas.mkString("[", ",", "]")}. Previous leader epoch was $leaderEpoch.")
