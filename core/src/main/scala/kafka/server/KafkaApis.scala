@@ -703,6 +703,8 @@ class KafkaApis(val requestChannel: RequestChannel,
         if (batch.hasProducerId){
           OrderedListMapSingleton.hMap.put(topicPartition, new MessageID(batch.producerId(), batch.producerEpoch() ,
             batch.baseSequence() , batch.lastSequence() ) )
+          info("[leader][akshat]producerId: "+batch.producerId()+" producerEpoch: "+batch.producerEpoch())
+          info("[leader][akshat]baseSequence: "+batch.baseSequence()+" lastSequence: "+batch.lastSequence())
         }
       }
 

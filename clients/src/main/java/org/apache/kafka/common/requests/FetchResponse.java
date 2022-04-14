@@ -40,6 +40,7 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import static org.apache.kafka.common.requests.FetchMetadata.INVALID_SESSION_ID;
+import static org.apache.kafka.common.requests.FetchMetadata.log;
 
 /**
  * This wrapper supports all versions of the Fetch API
@@ -209,6 +210,8 @@ public class FetchResponse extends AbstractResponse {
         {
             MessageID newKey = new MessageID( syncData.producerID() , syncData.producerEpoch() ,
                         syncData.sequenceBegin() , syncData.sequenceEnd() );
+            log.info("[follower][akshat] producerID"+syncData.producerID()+"  producerEpoch: "+syncData.producerEpoch());
+            log.info("[follower][akshat] sequenceBegin"+syncData.sequenceBegin()+"  sequenceEnd: "+syncData.sequenceEnd());
             if(memRecords.containsKey(newKey))
             {
                 MemoryRecords record = memRecords.get(newKey);

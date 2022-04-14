@@ -185,14 +185,16 @@ class ReplicaFetcherThread(name: String,
     var mergedAppendInfo:LogAppendInfo = UnknownLogAppendInfo
 
 
-
-    //info("[Akshat]MessageOrder array size "+recordsList.size())
-    //info("[Akshat]processPartitionData FetchOffset"+fetchOffset)
+    if (recordsList.size() == 0)
+    {
+      info("[Akshat]MessageOrder array size "+msgOrders.size())
+      info("[Akshat]processPartitionData FetchOffset "+fetchOffset)
+    }
     // Old cold here :
    // val records = toMemoryRecords(FetchResponse.recordsOrFail(partitionData));
-    if (msgOrders.size() == 0 && partitionData.records.sizeInBytes() > 0){
-      info("topic: "+topicPartition.toString()+" orders is 0, but size of records > 0")
-    }
+//    if (msgOrders.size() == 0 && partitionData.records.sizeInBytes() > 0){
+//      info("topic: "+topicPartition.toString()+" orders is 0, but size of records > 0")
+//    }
 
     var log = partition.localLogOrException
     for( i <- 0 until recordsList.size())

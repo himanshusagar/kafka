@@ -36,7 +36,7 @@ public class OrderedListMap
             obj.setProducerEpoch(pIE.producerEpoch);
             obj.setProducerID(pIE.producerId);
             obj.setSequenceBegin(pIE.sequenceBegin);
-            obj.setSequenceEnd(pIE.sequenceBegin);
+            obj.setSequenceEnd(pIE.sequenceEnd);
             output.add( obj );
         }
         return output;
