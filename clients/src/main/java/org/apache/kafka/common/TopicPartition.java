@@ -53,6 +53,16 @@ public final class TopicPartition implements Serializable {
         return result;
     }
 
+    /** Check topic is one of MM2 internal topic, this is used to make sure the topic doesn't need to be replicated.*/
+    public boolean isMM2InternalTopic(String topic) {
+        return  topic.endsWith(".internal");
+    }
+
+    public boolean isInternal(){
+        boolean isKafkaInternalTopic = topic.startsWith("__") || topic.startsWith(".") ||  topic.endsWith("-internal");
+        return isMM2InternalTopic(topic) || isKafkaInternalTopic;
+    }
+
     @Override
     public boolean equals(Object obj) {
         if (this == obj)

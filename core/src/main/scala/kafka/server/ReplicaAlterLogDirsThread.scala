@@ -126,6 +126,13 @@ class ReplicaAlterLogDirsThread(name: String,
     partitionData.toMap
   }
 
+//  // process fetched data for internal data.
+//  override def processInternalPartitionData(topicPartition: TopicPartition,
+//                                            fetchOffset: Long,
+//                                            partitionData: FetchData): Option[LogAppendInfo] = {
+//    processPartitionData(topicPartition, fetchOffset, partitionData)
+//  }
+
   // process fetched data
   override def processPartitionData(topicPartition: TopicPartition,
                                     fetchOffset: Long,

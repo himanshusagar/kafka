@@ -166,6 +166,53 @@ class ReplicaFetcherThread(name: String,
     }
   }
 
+  // process fetched data for internal topics differently
+  override def processInternalPartitionData(topicPartition: TopicPartition,
+                                            fetchOffset: Long,
+                                            partitionData: FetchData): Option[LogAppendInfo] = {
+    val logTrace = isTraceEnabled
+    val partition = replicaMgr.getPartitionOrException(topicPartition)
+    val log = partition.localLogOrException
+    val records = toMemoryRecords(FetchResponse.recordsOrFail(partitionData))
+
+    maybeWarnIfOversizedRecords(records, topicPartition)
+
+    if (fetchOffset != log.logEndOffset)
+      throw new IllegalStateException("Offset mismatch for partition %s: fetched offset = %d, log end offset = %d.".format(
+        topicPartition, fetchOffset, log.logEndOffset))
+
+    if (logTrace)
+      trace("Follower has replica log end offset %d for partition %s. Received %d messages and leader hw %d"
+        .format(log.logEndOffset, topicPartition, records.sizeInBytes, partitionData.highWatermark))
+
+    // Append the leader's messages to the log
+    val logAppendInfo = partition.appendRecordsToFollowerOrFutureReplica(records, isFuture = false)
+
+    if (logTrace)
+      trace("Follower has replica log end offset %d after appending %d bytes of messages for partition %s"
+        .format(log.logEndOffset, records.sizeInBytes, topicPartition))
+    val leaderLogStartOffset = partitionData.logStartOffset
+
+    // For the follower replica, we do not need to keep its segment base offset and physical position.
+    // These values will be computed upon becoming leader or handling a preferred read replica fetch.
+    val followerHighWatermark = log.updateHighWatermark(partitionData.highWatermark)
+    log.maybeIncrementLogStartOffset(leaderLogStartOffset, LeaderOffsetIncremented)
+    if (logTrace)
+      trace(s"Follower set replica high watermark for partition $topicPartition to $followerHighWatermark")
+
+    // Traffic from both in-sync and out of sync replicas are accounted for in replication quota to ensure total replication
+    // traffic doesn't exceed quota.
+    if (quota.isThrottled(topicPartition))
+      quota.record(records.sizeInBytes)
+
+    if (partition.isReassigning && partition.isAddingLocalReplica)
+      brokerTopicStats.updateReassignmentBytesIn(records.sizeInBytes)
+
+    brokerTopicStats.updateReplicationBytesIn(records.sizeInBytes)
+
+    logAppendInfo
+  }
+
   // process fetched data
   override def processPartitionData(topicPartition: TopicPartition,
                                     fetchOffset: Long,
@@ -184,6 +231,11 @@ class ReplicaFetcherThread(name: String,
     //var firstAppendInfo:Option[LogAppendInfo] = None
     var mergedAppendInfo:LogAppendInfo = UnknownLogAppendInfo
 
+    // If internal topic; use memory records to append to follower log
+    if (topicPartition.isInternal()){
+      logAppendInfo = processInternalPartitionData(topicPartition, fetchOffset, partitionData)
+      return logAppendInfo
+    }
 
 //    if (recordsList.size() == 0)
 //    {
@@ -235,8 +287,6 @@ class ReplicaFetcherThread(name: String,
            logAppendInfo = Option(mergedAppendInfo)
         }
 
-
-
         if (logTrace)
           info("Follower has replica log end offset %d after appending %d bytes of messages for partition %s"
             .format(log.logEndOffset, records.sizeInBytes, topicPartition))
@@ -262,22 +312,6 @@ class ReplicaFetcherThread(name: String,
         log = partition.localLogOrException
         fetchOffsets = log.logEndOffset
       }
-
-//      if(firstAppendInfo != logAppendInfo)
-//      {
-//        val obj: LogAppendInfo = logAppendInfo.get
-//        obj.firstOffset = firstAppendInfo.get.firstOffset;
-//        obj.logStartOffset = firstAppendInfo.get.logStartOffset;
-//
-//        obj.lastOffset = logAppendInfo.get.lastOffset;
-//        obj.lastLeaderEpoch = logAppendInfo.get.lastLeaderEpoch;
-//        obj.maxTimestamp = logAppendInfo.get.maxTimestamp;
-//        obj.offsetOfMaxTimestamp = logAppendInfo.get.offsetOfMaxTimestamp;
-//        obj.logAppendTime = logAppendInfo.get.logAppendTime;
-//        obj.validBytes += logAppendInfo.get.validBytes;
-//
-//        logAppendInfo = Option(obj)
-//      }
 
    logAppendInfo
   }

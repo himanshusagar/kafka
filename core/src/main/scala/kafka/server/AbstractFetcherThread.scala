@@ -71,6 +71,13 @@ abstract class AbstractFetcherThread(name: String,
 
   /* callbacks to be defined in subclass */
 
+  // process fetched data for internal topics, modified in ReplicaFetcherThread class
+  protected def processInternalPartitionData(topicPartition: TopicPartition,
+                                     fetchOffset: Long,
+                                     partitionData: FetchData): Option[LogAppendInfo] = {
+    processPartitionData(topicPartition, fetchOffset, partitionData)
+  }
+
   // process fetched data
   protected def processPartitionData(topicPartition: TopicPartition,
                                      fetchOffset: Long,
