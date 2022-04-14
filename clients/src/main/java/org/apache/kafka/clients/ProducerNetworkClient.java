@@ -451,10 +451,6 @@ public class ProducerNetworkClient implements KafkaClient {
     private void doSend(ClientRequest clientRequest, boolean isInternalRequest, long now) {
         ensureActive();
         String nodeId = clientRequest.destination();
-        if (!canSendRequest(nodeId, now)){
-            log.info("Trying to connect node: {}", nodeId);
-            connectionStates.canConnect(nodeId, now);
-        }
         if (!isInternalRequest) {
             // If this request came from outside the NetworkClient, validate
             // that we can send data.  If the request is internal, we trust
@@ -463,7 +459,14 @@ public class ProducerNetworkClient implements KafkaClient {
             // example, ApiVersionsRequests can be sent prior to being in
             // READY state.)
             if (!canSendRequest(nodeId, now))
-                throw new IllegalStateException("Attempt to send a request to node " + nodeId + " which is not ready.");
+            {
+
+                throw new IllegalStateException("Attempt to send a request to node " + nodeId + " which is not ready."
+                        + connectionStates.isReady(nodeId, now) + " "
+                        + selector.isChannelReady(nodeId) + " "
+                        + inFlightRequests.canSendMore(nodeId));
+            }
+
         }
         AbstractRequest.Builder<?> builder = clientRequest.requestBuilder();
         try {
