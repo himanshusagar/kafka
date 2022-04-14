@@ -29,15 +29,23 @@ public class OrderedListMap
 
         List<FetchResponseData.FollowerSyncData> output = new ArrayList<>();
         List<MessageID> tmp = get(key);
-        for( int i = offset; i< tmp.size(); i++)
+        long currOffset = 0;
+        for( int i = 0; i< tmp.size(); i++)
         {
             MessageID pIE = tmp.get(i);
-            FetchResponseData.FollowerSyncData obj = new FetchResponseData.FollowerSyncData();
-            obj.setProducerEpoch(pIE.producerEpoch);
-            obj.setProducerID(pIE.producerId);
-            obj.setSequenceBegin(pIE.sequenceBegin);
-            obj.setSequenceEnd(pIE.sequenceEnd);
-            output.add( obj );
+            if(currOffset >= offset)
+            {
+                FetchResponseData.FollowerSyncData obj = new FetchResponseData.FollowerSyncData();
+                obj.setProducerEpoch(pIE.producerEpoch);
+                obj.setProducerID(pIE.producerId);
+                obj.setSequenceBegin(pIE.sequenceBegin);
+                obj.setSequenceEnd(pIE.sequenceEnd);
+                output.add(obj);
+            }
+            else
+            {
+                currOffset = currOffset + pIE.sequenceEnd - pIE.sequenceBegin + 1;
+            }
         }
         return output;
     }
@@ -64,6 +72,22 @@ public class OrderedListMap
     {
         if(inMap(key))
             return hMap.get(key).size();
+        return 0;
+    }
+
+    public long sizeOffsets(TopicPartition key)
+    {
+        if(inMap(key))
+        {
+            List<MessageID> tmp = get(key);
+            long currOffset = 0;
+            for( int i = 0; i < tmp.size(); i++)
+            {
+                MessageID pIE = tmp.get(i);
+                currOffset = currOffset + pIE.sequenceEnd - pIE.sequenceBegin + 1;
+            }
+            return currOffset;
+        }
         return 0;
     }
 }
