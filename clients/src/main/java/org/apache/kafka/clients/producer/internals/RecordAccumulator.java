@@ -17,19 +17,11 @@
 package org.apache.kafka.clients.producer.internals;
 
 import java.nio.ByteBuffer;
-import java.util.ArrayDeque;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Deque;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Set;
+import java.util.*;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.apache.kafka.clients.ApiVersions;
+import org.apache.kafka.clients.KafkaClient;
 import org.apache.kafka.clients.producer.Callback;
 import org.apache.kafka.common.utils.ProducerIdAndEpoch;
 import org.apache.kafka.common.Cluster;
@@ -480,11 +472,11 @@ public final class RecordAccumulator {
                         boolean expired = waitedTimeMs >= timeToWaitMs;
                         boolean transactionCompleting = transactionManager != null && transactionManager.isCompleting();
                         boolean sendable = full
-                            || expired
-                            || exhausted
-                            || closed
-                            || flushInProgress()
-                            || transactionCompleting;
+                                || expired
+                                || exhausted
+                                || closed
+                                || flushInProgress()
+                                || transactionCompleting;
                         if (sendable && !backingOff) {
                             int a = 0;
                             for (Node follower : infoForAll.replicas())
@@ -505,7 +497,38 @@ public final class RecordAccumulator {
         }
         return new ReadyCheckResult(readyNodes, nextReadyCheckDelayMs, unknownLeaderTopics);
     }
+    public Set<Node> allReplicaOrNoneNodeCheck(Set<Node> readyNodes, Cluster cluster, KafkaClient client , long now)
+    {
+        Set<Node> readyAvailNodes = new HashSet<>();
+        for (Map.Entry<TopicPartition, Deque<ProducerBatch>> entry : this.batches.entrySet())
+        {
+            Deque<ProducerBatch> deque = entry.getValue();
+            synchronized (deque)
+            {
+                ProducerBatch batch = deque.peekFirst();
+                if (batch != null)
+                {
+                    TopicPartition part = entry.getKey();
+                    PartitionInfo infoForAll = cluster.partitionsByTopicPartition.get(part);
+                    int counter = 0;
+                    int size = infoForAll.replicas().length;
 
+                    for (Node replica : infoForAll.replicas())
+                        if(readyNodes.contains(replica) && client.ready(replica , now) )
+                            counter++;
+                    if(counter == size)
+                    {
+                        //All replicas in readyNodes
+                        readyAvailNodes.addAll(Arrays.asList(infoForAll.replicas()));
+                    }
+                }
+
+            }
+
+        }
+        return readyAvailNodes;
+
+    }
     /**
      * Check whether there are any batches which haven't been drained
      */
@@ -950,7 +973,7 @@ public final class RecordAccumulator {
      * The set of nodes that have at least one complete record batch in the accumulator
      */
     public final static class ReadyCheckResult {
-        public final Set<Node> readyNodes;
+        public Set<Node> readyNodes;
         public final long nextReadyCheckDelayMs;
         public final Set<String> unknownLeaderTopics;
 
