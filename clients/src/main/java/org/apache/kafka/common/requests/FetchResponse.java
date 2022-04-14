@@ -205,17 +205,25 @@ public class FetchResponse extends AbstractResponse {
     //hsagar
     public static List<MemoryRecords> recordsOrFailUsingOrder(HashMap<MessageID, MemoryRecords> memRecords , List<FetchResponseData.FollowerSyncData> msgOrders)
     {
+        boolean end = false;
         List<MemoryRecords> recordsList = new ArrayList<>();
         for(FetchResponseData.FollowerSyncData syncData : msgOrders)
         {
             MessageID newKey = new MessageID( syncData.producerID() , syncData.producerEpoch() ,
                         syncData.sequenceBegin() , syncData.sequenceEnd() );
-            log.info("[follower][akshat] producerID"+syncData.producerID()+"  producerEpoch: "+syncData.producerEpoch());
-            log.info("[follower][akshat] sequenceBegin"+syncData.sequenceBegin()+"  sequenceEnd: "+syncData.sequenceEnd());
+//            log.info("[follower][akshat] producerID"+syncData.producerID()+"  producerEpoch: "+syncData.producerEpoch());
+//            log.info("[follower][akshat] sequenceBegin"+syncData.sequenceBegin()+"  sequenceEnd: "+syncData.sequenceEnd());
+            if(memRecords.containsKey(newKey) && end){
+                log.info("[akshat][follower] HOLE");
+            }
+
             if(memRecords.containsKey(newKey))
             {
                 MemoryRecords record = memRecords.get(newKey);
                 recordsList.add(record);
+            }
+            else{
+                end = true;
             }
         }
         return recordsList;
