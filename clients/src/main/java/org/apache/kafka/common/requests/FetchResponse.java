@@ -226,7 +226,8 @@ public class FetchResponse extends AbstractResponse {
                 recordsList.add(record);
                 //hsagar : marking for deletion
                 if( syncData.sequenceEnd() < highWaterMark)
-                    memRecords.remove(newKey);
+                    record.validBytes = -2;
+                memRecords.remove(newKey);
             }
             else{
                 end = true;

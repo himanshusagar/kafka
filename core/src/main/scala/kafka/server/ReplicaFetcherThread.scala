@@ -227,7 +227,7 @@ class ReplicaFetcherThread(name: String,
     // got it from leader
     val msgOrders = partitionData.messageOrders;
     val recordsList = FetchResponse.recordsOrFailUsingOrder(hMapForTP , msgOrders , partitionData.highWatermark());
-    OrderedMessageMapSingleton.hMap.put(topicPartition , hMapForTP);
+    OrderedMessageMapSingleton.hMap.removeWithNoValidBytes(topicPartition);
 
     var logAppendInfo:Option[LogAppendInfo] = None
     //var firstAppendInfo:Option[LogAppendInfo] = None
