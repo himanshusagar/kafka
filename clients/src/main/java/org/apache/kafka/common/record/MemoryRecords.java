@@ -55,7 +55,7 @@ public class MemoryRecords extends AbstractRecords {
 
     private final Iterable<MutableRecordBatch> batches = this::batchIterator;
 
-    public int validBytes = -1;
+    private int validBytes = -1;
 
     // Construct a writable memory records
     private MemoryRecords(ByteBuffer buffer) {

@@ -3,20 +3,19 @@ import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.common.internals.Topic;
 import org.apache.kafka.common.record.MemoryRecords;
 import org.apache.kafka.common.utils.MessageID;
-import java.util.concurrent.ConcurrentHashMap;
-
+import java.util.HashMap;
 
 public class OrderedMessageMap
 {
-    private ConcurrentHashMap<TopicPartition , ConcurrentHashMap<MessageID , MemoryRecords> > hMap;
+    private HashMap<TopicPartition , HashMap<MessageID , MemoryRecords> > hMap;
 
     public void printf()
     {
-        System.out.println("Printing ConcurrentHashMap<TopicPartition , ConcurrentHashMap<ProducerIdAndEpoch , MemoryRecords> > ");
+        System.out.println("Printing HashMap<TopicPartition , HashMap<ProducerIdAndEpoch , MemoryRecords> > ");
         for(TopicPartition key : hMap.keySet())
         {
             System.out.println("Out = "  + key + " Begin" );
-            ConcurrentHashMap<MessageID , MemoryRecords> inMap = hMap.get(key);
+            HashMap<MessageID , MemoryRecords> inMap = hMap.get(key);
 
             for (MessageID key2 : inMap.keySet())
             {
@@ -28,7 +27,7 @@ public class OrderedMessageMap
     }
     public OrderedMessageMap()
     {
-        hMap = new ConcurrentHashMap<>();
+        hMap = new HashMap<>();
     }
     public boolean inMap(TopicPartition key)
     {
@@ -43,25 +42,18 @@ public class OrderedMessageMap
         return MemoryRecords.EMPTY;
     }
 
-    public ConcurrentHashMap<MessageID , MemoryRecords> get(TopicPartition key)
+    public HashMap<MessageID , MemoryRecords> get(TopicPartition key)
     {
         if( !hMap.containsKey(key) )
-            hMap.put(key, new ConcurrentHashMap<>() );
+            hMap.put(key, new HashMap<>() );
         return hMap.get(key);
-    }
-
-    public void removeWithNoValidBytes(TopicPartition key) //hsagar : used with highwatermark
-    {
-        ConcurrentHashMap<MessageID , MemoryRecords> memMap = get(key);
-        boolean retVal = memMap.entrySet().removeIf(e -> (e.getValue().validBytes == -2));
-        //System.out.println("removeWithNoValidBytes = " + retVal);
     }
 
     public void put(TopicPartition key, MessageID producerIdAndEpoch , MemoryRecords message)
     {
         if( !inMap(key) )
-            hMap.put(key, new ConcurrentHashMap<>() );
-        ConcurrentHashMap<MessageID , MemoryRecords> internalMap = hMap.get(key);
+            hMap.put(key, new HashMap<>() );
+        HashMap<MessageID , MemoryRecords> internalMap = hMap.get(key);
         internalMap.put(producerIdAndEpoch , message);
         hMap.put(key , internalMap);
         //System.out.println("From Put:::::::::");
