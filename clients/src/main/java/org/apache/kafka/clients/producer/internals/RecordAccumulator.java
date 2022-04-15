@@ -521,8 +521,8 @@ public final class RecordAccumulator {
                         //All replicas in readyNodes
                         readyAvailNodes.addAll(Arrays.asList(infoForAll.replicas()));
                     }
-                    //else
-                    //    log.info("hsagar node avail counter" + counter + " for TopicPartition:" + part);
+                    else
+                        log.info("hsagar node avail counter" + counter + " for TopicPartition:" + part);
                 }
 
             }
