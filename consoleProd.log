@@ -1,0 +1,485 @@
+SLF4J: Class path contains multiple SLF4J bindings.
+SLF4J: Found binding in [jar:file:/Users/hsagar/dev/kafka/core/build/dependant-libs-2.13.6/slf4j-log4j12-1.7.30.jar!/org/slf4j/impl/StaticLoggerBinder.class]
+SLF4J: Found binding in [jar:file:/Users/hsagar/dev/kafka/tools/build/dependant-libs-2.13.6/slf4j-log4j12-1.7.30.jar!/org/slf4j/impl/StaticLoggerBinder.class]
+SLF4J: Found binding in [jar:file:/Users/hsagar/dev/kafka/trogdor/build/dependant-libs-2.13.6/slf4j-log4j12-1.7.30.jar!/org/slf4j/impl/StaticLoggerBinder.class]
+SLF4J: Found binding in [jar:file:/Users/hsagar/dev/kafka/connect/api/build/dependant-libs/slf4j-log4j12-1.7.30.jar!/org/slf4j/impl/StaticLoggerBinder.class]
+SLF4J: Found binding in [jar:file:/Users/hsagar/dev/kafka/connect/transforms/build/dependant-libs/slf4j-log4j12-1.7.30.jar!/org/slf4j/impl/StaticLoggerBinder.class]
+SLF4J: Found binding in [jar:file:/Users/hsagar/dev/kafka/connect/runtime/build/dependant-libs/slf4j-log4j12-1.7.30.jar!/org/slf4j/impl/StaticLoggerBinder.class]
+SLF4J: Found binding in [jar:file:/Users/hsagar/dev/kafka/connect/file/build/dependant-libs/slf4j-log4j12-1.7.30.jar!/org/slf4j/impl/StaticLoggerBinder.class]
+SLF4J: Found binding in [jar:file:/Users/hsagar/dev/kafka/connect/mirror/build/dependant-libs/slf4j-log4j12-1.7.30.jar!/org/slf4j/impl/StaticLoggerBinder.class]
+SLF4J: Found binding in [jar:file:/Users/hsagar/dev/kafka/connect/mirror-client/build/dependant-libs/slf4j-log4j12-1.7.30.jar!/org/slf4j/impl/StaticLoggerBinder.class]
+SLF4J: Found binding in [jar:file:/Users/hsagar/dev/kafka/connect/json/build/dependant-libs/slf4j-log4j12-1.7.30.jar!/org/slf4j/impl/StaticLoggerBinder.class]
+SLF4J: Found binding in [jar:file:/Users/hsagar/dev/kafka/connect/basic-auth-extension/build/dependant-libs/slf4j-log4j12-1.7.30.jar!/org/slf4j/impl/StaticLoggerBinder.class]
+SLF4J: See http://www.slf4j.org/codes.html#multiple_bindings for an explanation.
+SLF4J: Actual binding is of type [org.slf4j.impl.Log4jLoggerFactory]
+[2022-04-15 09:29:15,613] INFO Registered kafka:type=kafka.Log4jController MBean (kafka.utils.Log4jControllerRegistration$)
+[2022-04-15 09:29:15,684] INFO ProducerConfig values: 
+	acks = 1
+	batch.size = 16384
+	bootstrap.servers = [localhost:9092, localhost:9093]
+	buffer.memory = 33554432
+	client.dns.lookup = use_all_dns_ips
+	client.id = console-producer
+	compression.type = none
+	connections.max.idle.ms = 540000
+	delivery.timeout.ms = 120000
+	enable.idempotence = true
+	interceptor.classes = []
+	key.serializer = class org.apache.kafka.common.serialization.ByteArraySerializer
+	linger.ms = 1000
+	max.block.ms = 60000
+	max.in.flight.requests.per.connection = 5
+	max.request.size = 1048576
+	metadata.max.age.ms = 300000
+	metadata.max.idle.ms = 300000
+	metric.reporters = []
+	metrics.num.samples = 2
+	metrics.recording.level = INFO
+	metrics.sample.window.ms = 30000
+	partitioner.class = class org.apache.kafka.clients.producer.internals.DefaultPartitioner
+	receive.buffer.bytes = 32768
+	reconnect.backoff.max.ms = 1000
+	reconnect.backoff.ms = 50
+	request.timeout.ms = 1500
+	retries = 3
+	retry.backoff.ms = 100
+	sasl.client.callback.handler.class = null
+	sasl.jaas.config = null
+	sasl.kerberos.kinit.cmd = /usr/bin/kinit
+	sasl.kerberos.min.time.before.relogin = 60000
+	sasl.kerberos.service.name = null
+	sasl.kerberos.ticket.renew.jitter = 0.05
+	sasl.kerberos.ticket.renew.window.factor = 0.8
+	sasl.login.callback.handler.class = null
+	sasl.login.class = null
+	sasl.login.connect.timeout.ms = null
+	sasl.login.read.timeout.ms = null
+	sasl.login.refresh.buffer.seconds = 300
+	sasl.login.refresh.min.period.seconds = 60
+	sasl.login.refresh.window.factor = 0.8
+	sasl.login.refresh.window.jitter = 0.05
+	sasl.login.retry.backoff.max.ms = 10000
+	sasl.login.retry.backoff.ms = 100
+	sasl.mechanism = GSSAPI
+	sasl.oauthbearer.clock.skew.seconds = 30
+	sasl.oauthbearer.expected.audience = null
+	sasl.oauthbearer.expected.issuer = null
+	sasl.oauthbearer.jwks.endpoint.refresh.ms = 3600000
+	sasl.oauthbearer.jwks.endpoint.retry.backoff.max.ms = 10000
+	sasl.oauthbearer.jwks.endpoint.retry.backoff.ms = 100
+	sasl.oauthbearer.jwks.endpoint.url = null
+	sasl.oauthbearer.scope.claim.name = scope
+	sasl.oauthbearer.sub.claim.name = sub
+	sasl.oauthbearer.token.endpoint.url = null
+	security.protocol = PLAINTEXT
+	security.providers = null
+	send.buffer.bytes = 102400
+	socket.connection.setup.timeout.max.ms = 3000000
+	socket.connection.setup.timeout.ms = 1000000
+	ssl.cipher.suites = null
+	ssl.enabled.protocols = [TLSv1.2, TLSv1.3]
+	ssl.endpoint.identification.algorithm = https
+	ssl.engine.factory.class = null
+	ssl.key.password = null
+	ssl.keymanager.algorithm = SunX509
+	ssl.keystore.certificate.chain = null
+	ssl.keystore.key = null
+	ssl.keystore.location = null
+	ssl.keystore.password = null
+	ssl.keystore.type = JKS
+	ssl.protocol = TLSv1.3
+	ssl.provider = null
+	ssl.secure.random.implementation = null
+	ssl.trustmanager.algorithm = PKIX
+	ssl.truststore.certificates = null
+	ssl.truststore.location = null
+	ssl.truststore.password = null
+	ssl.truststore.type = JKS
+	transaction.timeout.ms = 60000
+	transactional.id = null
+	value.serializer = class org.apache.kafka.common.serialization.ByteArraySerializer
+ (org.apache.kafka.clients.producer.ProducerConfig)
+[2022-04-15 09:29:15,713] INFO [Producer clientId=console-producer] Instantiated an idempotent producer. (org.apache.kafka.clients.producer.KafkaProducer)
+[2022-04-15 09:29:15,781] INFO Kafka version: 3.2.0-SNAPSHOT (org.apache.kafka.common.utils.AppInfoParser)
+[2022-04-15 09:29:15,781] INFO Kafka commitId: abca7372bb2ab5a2 (org.apache.kafka.common.utils.AppInfoParser)
+[2022-04-15 09:29:15,781] INFO Kafka startTimeMs: 1650032955766 (org.apache.kafka.common.utils.AppInfoParser)
+[2022-04-15 09:29:15,895] INFO [Producer clientId=console-producer] initiate() for node: -2 (org.apache.kafka.clients.ProducerNetworkClient)
+[2022-04-15 09:29:15,896] INFO [Producer clientId=console-producer] Initiating connection to node localhost:9093 (id: -2 rack: null) using address localhost/127.0.0.1 (org.apache.kafka.clients.ProducerNetworkClient)
+[2022-04-15 09:29:15,908] INFO [Producer clientId=console-producer] Initiating API versions fetch from node -2. (org.apache.kafka.clients.ProducerNetworkClient)
+[2022-04-15 09:29:16,006] INFO [Producer clientId=console-producer] initiate() for node: -1 (org.apache.kafka.clients.ProducerNetworkClient)
+[2022-04-15 09:29:16,007] INFO [Producer clientId=console-producer] Initiating connection to node localhost:9092 (id: -1 rack: null) using address localhost/127.0.0.1 (org.apache.kafka.clients.ProducerNetworkClient)
+[2022-04-15 09:29:16,013] INFO [Producer clientId=console-producer] Initiating API versions fetch from node -1. (org.apache.kafka.clients.ProducerNetworkClient)
+[2022-04-15 09:29:16,040] INFO [Producer clientId=console-producer] Sending metadata request MetadataRequestData(topics=[MetadataRequestTopic(topicId=AAAAAAAAAAAAAAAAAAAAAA, name='test3')], allowAutoTopicCreation=true, includeClusterAuthorizedOperations=false, includeTopicAuthorizedOperations=false) to node localhost:9093 (id: -2 rack: null) (org.apache.kafka.clients.ProducerNetworkClient)
+[2022-04-15 09:29:16,073] INFO [Producer clientId=console-producer] Cluster ID: G2JAbjpsQ3WsqhYAaLxBxg (org.apache.kafka.clients.Metadata)
+[2022-04-15 09:29:16,134] INFO [Producer clientId=console-producer] ProducerId set to 0 with epoch 0 (org.apache.kafka.clients.producer.internals.TransactionManager)
+[2022-04-15 09:29:16,136] INFO [Producer clientId=console-producer] initiate() for node: 0 (org.apache.kafka.clients.ProducerNetworkClient)
+[2022-04-15 09:29:16,136] INFO [Producer clientId=console-producer] Initiating connection to node localhost:9092 (id: 0 rack: null) using address localhost/127.0.0.1 (org.apache.kafka.clients.ProducerNetworkClient)
+[2022-04-15 09:29:16,137] INFO [Producer clientId=console-producer] initiate() for node: 2 (org.apache.kafka.clients.ProducerNetworkClient)
+[2022-04-15 09:29:16,137] INFO [Producer clientId=console-producer] Initiating connection to node localhost:9094 (id: 2 rack: null) using address localhost/127.0.0.1 (org.apache.kafka.clients.ProducerNetworkClient)
+[2022-04-15 09:29:16,137] INFO [Producer clientId=console-producer] initiate() for node: 1 (org.apache.kafka.clients.ProducerNetworkClient)
+[2022-04-15 09:29:16,137] INFO [Producer clientId=console-producer] Initiating connection to node localhost:9093 (id: 1 rack: null) using address localhost/127.0.0.1 (org.apache.kafka.clients.ProducerNetworkClient)
+[2022-04-15 09:29:16,149] INFO [Producer clientId=console-producer] Initiating API versions fetch from node 0. (org.apache.kafka.clients.ProducerNetworkClient)
+[2022-04-15 09:29:16,149] INFO [Producer clientId=console-producer] Initiating API versions fetch from node 1. (org.apache.kafka.clients.ProducerNetworkClient)
+[2022-04-15 09:29:16,149] INFO [Producer clientId=console-producer] Initiating API versions fetch from node 2. (org.apache.kafka.clients.ProducerNetworkClient)
+java.lang.IllegalStateException: Attempt to send a request to node 2 which is not ready.true true false
+	at org.apache.kafka.clients.ProducerNetworkClient.doSend(ProducerNetworkClient.java:467)
+	at org.apache.kafka.clients.ProducerNetworkClient.send(ProducerNetworkClient.java:442)
+	at org.apache.kafka.clients.producer.internals.Sender.sendProduceRequest(Sender.java:970)
+	at org.apache.kafka.clients.producer.internals.Sender.sendProduceRequests(Sender.java:834)
+	at org.apache.kafka.clients.producer.internals.Sender.sendProducerData(Sender.java:403)
+	at org.apache.kafka.clients.producer.internals.Sender.runOnce(Sender.java:319)
+	at org.apache.kafka.clients.producer.internals.Sender.run(Sender.java:235)
+	at java.base/java.lang.Thread.run(Thread.java:833)
+java.lang.IllegalStateException: Attempt to send a request to node 2 which is not ready.true true false
+	at org.apache.kafka.clients.ProducerNetworkClient.doSend(ProducerNetworkClient.java:467)
+	at org.apache.kafka.clients.ProducerNetworkClient.send(ProducerNetworkClient.java:442)
+	at org.apache.kafka.clients.producer.internals.Sender.sendProduceRequest(Sender.java:970)
+	at org.apache.kafka.clients.producer.internals.Sender.sendProduceRequests(Sender.java:834)
+	at org.apache.kafka.clients.producer.internals.Sender.sendProducerData(Sender.java:403)
+	at org.apache.kafka.clients.producer.internals.Sender.runOnce(Sender.java:319)
+	at org.apache.kafka.clients.producer.internals.Sender.run(Sender.java:235)
+	at java.base/java.lang.Thread.run(Thread.java:833)
+java.lang.IllegalStateException: Attempt to send a request to node 2 which is not ready.true true false
+	at org.apache.kafka.clients.ProducerNetworkClient.doSend(ProducerNetworkClient.java:467)
+	at org.apache.kafka.clients.ProducerNetworkClient.send(ProducerNetworkClient.java:442)
+	at org.apache.kafka.clients.producer.internals.Sender.sendProduceRequest(Sender.java:970)
+	at org.apache.kafka.clients.producer.internals.Sender.sendProduceRequests(Sender.java:834)
+	at org.apache.kafka.clients.producer.internals.Sender.sendProducerData(Sender.java:403)
+	at org.apache.kafka.clients.producer.internals.Sender.runOnce(Sender.java:319)
+	at org.apache.kafka.clients.producer.internals.Sender.run(Sender.java:235)
+	at java.base/java.lang.Thread.run(Thread.java:833)
+java.lang.IllegalStateException: Attempt to send a request to node 2 which is not ready.true true false
+	at org.apache.kafka.clients.ProducerNetworkClient.doSend(ProducerNetworkClient.java:467)
+	at org.apache.kafka.clients.ProducerNetworkClient.send(ProducerNetworkClient.java:442)
+	at org.apache.kafka.clients.producer.internals.Sender.sendProduceRequest(Sender.java:970)
+	at org.apache.kafka.clients.producer.internals.Sender.sendProduceRequests(Sender.java:834)
+	at org.apache.kafka.clients.producer.internals.Sender.sendProducerData(Sender.java:403)
+	at org.apache.kafka.clients.producer.internals.Sender.runOnce(Sender.java:319)
+	at org.apache.kafka.clients.producer.internals.Sender.run(Sender.java:235)
+	at java.base/java.lang.Thread.run(Thread.java:833)
+java.lang.IllegalStateException: Attempt to send a request to node 2 which is not ready.true true false
+	at org.apache.kafka.clients.ProducerNetworkClient.doSend(ProducerNetworkClient.java:467)
+	at org.apache.kafka.clients.ProducerNetworkClient.send(ProducerNetworkClient.java:442)
+	at org.apache.kafka.clients.producer.internals.Sender.sendProduceRequest(Sender.java:970)
+	at org.apache.kafka.clients.producer.internals.Sender.sendProduceRequests(Sender.java:834)
+	at org.apache.kafka.clients.producer.internals.Sender.sendProducerData(Sender.java:403)
+	at org.apache.kafka.clients.producer.internals.Sender.runOnce(Sender.java:319)
+	at org.apache.kafka.clients.producer.internals.Sender.run(Sender.java:235)
+	at java.base/java.lang.Thread.run(Thread.java:833)
+java.lang.IllegalStateException: Attempt to send a request to node 2 which is not ready.true true false
+	at org.apache.kafka.clients.ProducerNetworkClient.doSend(ProducerNetworkClient.java:467)
+	at org.apache.kafka.clients.ProducerNetworkClient.send(ProducerNetworkClient.java:442)
+	at org.apache.kafka.clients.producer.internals.Sender.sendProduceRequest(Sender.java:970)
+	at org.apache.kafka.clients.producer.internals.Sender.sendProduceRequests(Sender.java:834)
+	at org.apache.kafka.clients.producer.internals.Sender.sendProducerData(Sender.java:403)
+	at org.apache.kafka.clients.producer.internals.Sender.runOnce(Sender.java:319)
+	at org.apache.kafka.clients.producer.internals.Sender.run(Sender.java:235)
+	at java.base/java.lang.Thread.run(Thread.java:833)
+java.lang.IllegalStateException: Attempt to send a request to node 2 which is not ready.true true false
+	at org.apache.kafka.clients.ProducerNetworkClient.doSend(ProducerNetworkClient.java:467)
+	at org.apache.kafka.clients.ProducerNetworkClient.send(ProducerNetworkClient.java:442)
+	at org.apache.kafka.clients.producer.internals.Sender.sendProduceRequest(Sender.java:970)
+	at org.apache.kafka.clients.producer.internals.Sender.sendProduceRequests(Sender.java:834)
+	at org.apache.kafka.clients.producer.internals.Sender.sendProducerData(Sender.java:403)
+	at org.apache.kafka.clients.producer.internals.Sender.runOnce(Sender.java:319)
+	at org.apache.kafka.clients.producer.internals.Sender.run(Sender.java:235)
+	at java.base/java.lang.Thread.run(Thread.java:833)
+java.lang.IllegalStateException: Attempt to send a request to node 2 which is not ready.true true false
+	at org.apache.kafka.clients.ProducerNetworkClient.doSend(ProducerNetworkClient.java:467)
+	at org.apache.kafka.clients.ProducerNetworkClient.send(ProducerNetworkClient.java:442)
+	at org.apache.kafka.clients.producer.internals.Sender.sendProduceRequest(Sender.java:970)
+	at org.apache.kafka.clients.producer.internals.Sender.sendProduceRequests(Sender.java:834)
+	at org.apache.kafka.clients.producer.internals.Sender.sendProducerData(Sender.java:403)
+	at org.apache.kafka.clients.producer.internals.Sender.runOnce(Sender.java:319)
+	at org.apache.kafka.clients.producer.internals.Sender.run(Sender.java:235)
+	at java.base/java.lang.Thread.run(Thread.java:833)
+[2022-04-15 09:29:16,388] ERROR [Producer clientId=console-producer] The broker returned org.apache.kafka.common.errors.OutOfOrderSequenceException: The broker received an out of order sequence number. for topic-partition test3-1 with producerId 0, epoch 0, and sequence number 135 (org.apache.kafka.clients.producer.internals.TransactionManager)
+[2022-04-15 09:29:16,391] INFO [Producer clientId=console-producer] ProducerId set to 0 with epoch 1 (org.apache.kafka.clients.producer.internals.TransactionManager)
+[2022-04-15 09:29:16,391] INFO Resetting sequence number of batch with current sequence 165 for partition test3-1 to 0 (org.apache.kafka.clients.producer.internals.ProducerBatch)
+[2022-04-15 09:29:16,391] INFO Resetting sequence number of batch with current sequence 180 for partition test3-1 to 15 (org.apache.kafka.clients.producer.internals.ProducerBatch)
+[2022-04-15 09:29:16,391] INFO Resetting sequence number of batch with current sequence 195 for partition test3-1 to 30 (org.apache.kafka.clients.producer.internals.ProducerBatch)
+java.lang.IllegalStateException: Attempt to send a request to node 2 which is not ready.true true false
+	at org.apache.kafka.clients.ProducerNetworkClient.doSend(ProducerNetworkClient.java:467)
+	at org.apache.kafka.clients.ProducerNetworkClient.send(ProducerNetworkClient.java:442)
+	at org.apache.kafka.clients.producer.internals.Sender.sendProduceRequest(Sender.java:970)
+	at org.apache.kafka.clients.producer.internals.Sender.sendProduceRequests(Sender.java:834)
+	at org.apache.kafka.clients.producer.internals.Sender.sendProducerData(Sender.java:403)
+	at org.apache.kafka.clients.producer.internals.Sender.runOnce(Sender.java:319)
+	at org.apache.kafka.clients.producer.internals.Sender.run(Sender.java:235)
+	at java.base/java.lang.Thread.run(Thread.java:833)
+[2022-04-15 09:29:16,404] ERROR [Producer clientId=console-producer] The broker returned org.apache.kafka.common.errors.OutOfOrderSequenceException: The broker received an out of order sequence number. for topic-partition test3-1 with producerId 0, epoch 0, and sequence number 150 (org.apache.kafka.clients.producer.internals.TransactionManager)
+[2022-04-15 09:29:16,404] INFO [Producer clientId=console-producer] ProducerId set to 0 with epoch 2 (org.apache.kafka.clients.producer.internals.TransactionManager)
+[2022-04-15 09:29:16,404] INFO Resetting sequence number of batch with current sequence 15 for partition test3-1 to 0 (org.apache.kafka.clients.producer.internals.ProducerBatch)
+[2022-04-15 09:29:16,404] INFO Resetting sequence number of batch with current sequence 30 for partition test3-1 to 15 (org.apache.kafka.clients.producer.internals.ProducerBatch)
+[2022-04-15 09:29:16,404] INFO Resetting sequence number of batch with current sequence 45 for partition test3-1 to 30 (org.apache.kafka.clients.producer.internals.ProducerBatch)
+[2022-04-15 09:29:16,408] ERROR [Producer clientId=console-producer] The broker returned org.apache.kafka.common.errors.OutOfOrderSequenceException: The broker received an out of order sequence number. for topic-partition test3-1 with producerId 0, epoch 1, and sequence number 0 (org.apache.kafka.clients.producer.internals.TransactionManager)
+[2022-04-15 09:29:16,410] INFO [Producer clientId=console-producer] ProducerId set to 0 with epoch 3 (org.apache.kafka.clients.producer.internals.TransactionManager)
+[2022-04-15 09:29:16,411] INFO Resetting sequence number of batch with current sequence 15 for partition test3-1 to 0 (org.apache.kafka.clients.producer.internals.ProducerBatch)
+[2022-04-15 09:29:16,411] INFO Resetting sequence number of batch with current sequence 30 for partition test3-1 to 15 (org.apache.kafka.clients.producer.internals.ProducerBatch)
+[2022-04-15 09:29:16,411] INFO Resetting sequence number of batch with current sequence 45 for partition test3-1 to 30 (org.apache.kafka.clients.producer.internals.ProducerBatch)
+[2022-04-15 09:29:16,414] ERROR [Producer clientId=console-producer] The broker returned org.apache.kafka.common.errors.OutOfOrderSequenceException: The broker received an out of order sequence number. for topic-partition test3-1 with producerId 0, epoch 2, and sequence number 0 (org.apache.kafka.clients.producer.internals.TransactionManager)
+[2022-04-15 09:29:16,414] INFO [Producer clientId=console-producer] ProducerId set to 0 with epoch 4 (org.apache.kafka.clients.producer.internals.TransactionManager)
+[2022-04-15 09:29:16,414] INFO Resetting sequence number of batch with current sequence 15 for partition test3-1 to 0 (org.apache.kafka.clients.producer.internals.ProducerBatch)
+[2022-04-15 09:29:16,414] INFO Resetting sequence number of batch with current sequence 30 for partition test3-1 to 15 (org.apache.kafka.clients.producer.internals.ProducerBatch)
+[2022-04-15 09:29:16,414] INFO Resetting sequence number of batch with current sequence 45 for partition test3-1 to 30 (org.apache.kafka.clients.producer.internals.ProducerBatch)
+[2022-04-15 09:29:16,420] ERROR [Producer clientId=console-producer] The broker returned org.apache.kafka.common.errors.OutOfOrderSequenceException: The broker received an out of order sequence number. for topic-partition test3-1 with producerId 0, epoch 3, and sequence number 0 (org.apache.kafka.clients.producer.internals.TransactionManager)
+[2022-04-15 09:29:16,420] INFO [Producer clientId=console-producer] ProducerId set to 0 with epoch 5 (org.apache.kafka.clients.producer.internals.TransactionManager)
+[2022-04-15 09:29:16,420] INFO Resetting sequence number of batch with current sequence 15 for partition test3-1 to 0 (org.apache.kafka.clients.producer.internals.ProducerBatch)
+[2022-04-15 09:29:16,420] INFO Resetting sequence number of batch with current sequence 30 for partition test3-1 to 15 (org.apache.kafka.clients.producer.internals.ProducerBatch)
+[2022-04-15 09:29:16,420] INFO Resetting sequence number of batch with current sequence 45 for partition test3-1 to 30 (org.apache.kafka.clients.producer.internals.ProducerBatch)
+java.lang.IllegalStateException: Attempt to send a request to node 2 which is not ready.true true false
+	at org.apache.kafka.clients.ProducerNetworkClient.doSend(ProducerNetworkClient.java:467)
+	at org.apache.kafka.clients.ProducerNetworkClient.send(ProducerNetworkClient.java:442)
+	at org.apache.kafka.clients.producer.internals.Sender.sendProduceRequest(Sender.java:970)
+	at org.apache.kafka.clients.producer.internals.Sender.sendProduceRequests(Sender.java:834)
+	at org.apache.kafka.clients.producer.internals.Sender.sendProducerData(Sender.java:403)
+	at org.apache.kafka.clients.producer.internals.Sender.runOnce(Sender.java:319)
+	at org.apache.kafka.clients.producer.internals.Sender.run(Sender.java:235)
+	at java.base/java.lang.Thread.run(Thread.java:833)
+[2022-04-15 09:29:16,430] ERROR [Producer clientId=console-producer] The broker returned org.apache.kafka.common.errors.OutOfOrderSequenceException: The broker received an out of order sequence number. for topic-partition test3-1 with producerId 0, epoch 5, and sequence number 0 (org.apache.kafka.clients.producer.internals.TransactionManager)
+[2022-04-15 09:29:16,431] INFO [Producer clientId=console-producer] ProducerId set to 0 with epoch 6 (org.apache.kafka.clients.producer.internals.TransactionManager)
+[2022-04-15 09:29:16,431] INFO Resetting sequence number of batch with current sequence 30 for partition test3-1 to 0 (org.apache.kafka.clients.producer.internals.ProducerBatch)
+[2022-04-15 09:29:16,431] INFO Resetting sequence number of batch with current sequence 45 for partition test3-1 to 15 (org.apache.kafka.clients.producer.internals.ProducerBatch)
+[2022-04-15 09:29:16,432] INFO Resetting sequence number of batch with current sequence 60 for partition test3-1 to 30 (org.apache.kafka.clients.producer.internals.ProducerBatch)
+[2022-04-15 09:29:16,435] ERROR [Producer clientId=console-producer] The broker returned org.apache.kafka.common.errors.OutOfOrderSequenceException: The broker received an out of order sequence number. for topic-partition test3-1 with producerId 0, epoch 5, and sequence number 15 (org.apache.kafka.clients.producer.internals.TransactionManager)
+[2022-04-15 09:29:16,435] INFO [Producer clientId=console-producer] ProducerId set to 0 with epoch 7 (org.apache.kafka.clients.producer.internals.TransactionManager)
+[2022-04-15 09:29:16,435] INFO Resetting sequence number of batch with current sequence 30 for partition test3-1 to 0 (org.apache.kafka.clients.producer.internals.ProducerBatch)
+[2022-04-15 09:29:16,435] INFO Resetting sequence number of batch with current sequence 45 for partition test3-1 to 15 (org.apache.kafka.clients.producer.internals.ProducerBatch)
+[2022-04-15 09:29:16,439] ERROR [Producer clientId=console-producer] The broker returned org.apache.kafka.common.errors.OutOfOrderSequenceException: The broker received an out of order sequence number. for topic-partition test3-1 with producerId 0, epoch 6, and sequence number 0 (org.apache.kafka.clients.producer.internals.TransactionManager)
+[2022-04-15 09:29:16,439] INFO [Producer clientId=console-producer] ProducerId set to 0 with epoch 8 (org.apache.kafka.clients.producer.internals.TransactionManager)
+[2022-04-15 09:29:16,439] INFO Resetting sequence number of batch with current sequence 30 for partition test3-1 to 0 (org.apache.kafka.clients.producer.internals.ProducerBatch)
+java.lang.IllegalStateException: Attempt to send a request to node 2 which is not ready.true true false
+	at org.apache.kafka.clients.ProducerNetworkClient.doSend(ProducerNetworkClient.java:467)
+	at org.apache.kafka.clients.ProducerNetworkClient.send(ProducerNetworkClient.java:442)
+	at org.apache.kafka.clients.producer.internals.Sender.sendProduceRequest(Sender.java:970)
+	at org.apache.kafka.clients.producer.internals.Sender.sendProduceRequests(Sender.java:834)
+	at org.apache.kafka.clients.producer.internals.Sender.sendProducerData(Sender.java:403)
+	at org.apache.kafka.clients.producer.internals.Sender.runOnce(Sender.java:319)
+	at org.apache.kafka.clients.producer.internals.Sender.run(Sender.java:235)
+	at java.base/java.lang.Thread.run(Thread.java:833)
+[2022-04-15 09:29:16,449] ERROR [Producer clientId=console-producer] The broker returned org.apache.kafka.common.errors.OutOfOrderSequenceException: The broker received an out of order sequence number. for topic-partition test3-1 with producerId 0, epoch 6, and sequence number 15 (org.apache.kafka.clients.producer.internals.TransactionManager)
+[2022-04-15 09:29:16,449] INFO [Producer clientId=console-producer] ProducerId set to 0 with epoch 9 (org.apache.kafka.clients.producer.internals.TransactionManager)
+java.lang.IllegalStateException: Attempt to send a request to node 2 which is not ready.true true false
+	at org.apache.kafka.clients.ProducerNetworkClient.doSend(ProducerNetworkClient.java:467)
+	at org.apache.kafka.clients.ProducerNetworkClient.send(ProducerNetworkClient.java:442)
+	at org.apache.kafka.clients.producer.internals.Sender.sendProduceRequest(Sender.java:970)
+	at org.apache.kafka.clients.producer.internals.Sender.sendProduceRequests(Sender.java:834)
+	at org.apache.kafka.clients.producer.internals.Sender.sendProducerData(Sender.java:403)
+	at org.apache.kafka.clients.producer.internals.Sender.runOnce(Sender.java:319)
+	at org.apache.kafka.clients.producer.internals.Sender.run(Sender.java:235)
+	at java.base/java.lang.Thread.run(Thread.java:833)
+[2022-04-15 09:29:16,466] ERROR [Producer clientId=console-producer] The broker returned org.apache.kafka.common.errors.OutOfOrderSequenceException: The broker received an out of order sequence number. for topic-partition test3-1 with producerId 0, epoch 7, and sequence number 15 (org.apache.kafka.clients.producer.internals.TransactionManager)
+[2022-04-15 09:29:16,466] INFO [Producer clientId=console-producer] ProducerId set to 0 with epoch 10 (org.apache.kafka.clients.producer.internals.TransactionManager)
+[2022-04-15 09:29:16,467] ERROR [Producer clientId=console-producer] The broker returned org.apache.kafka.common.errors.OutOfOrderSequenceException: The broker received an out of order sequence number. for topic-partition test3-1 with producerId 0, epoch 8, and sequence number 0 (org.apache.kafka.clients.producer.internals.TransactionManager)
+[2022-04-15 09:29:16,467] INFO [Producer clientId=console-producer] ProducerId set to 0 with epoch 11 (org.apache.kafka.clients.producer.internals.TransactionManager)
+java.lang.IllegalStateException: Attempt to send a request to node 2 which is not ready.true true false
+	at org.apache.kafka.clients.ProducerNetworkClient.doSend(ProducerNetworkClient.java:467)
+	at org.apache.kafka.clients.ProducerNetworkClient.send(ProducerNetworkClient.java:442)
+	at org.apache.kafka.clients.producer.internals.Sender.sendProduceRequest(Sender.java:970)
+	at org.apache.kafka.clients.producer.internals.Sender.sendProduceRequests(Sender.java:834)
+	at org.apache.kafka.clients.producer.internals.Sender.sendProducerData(Sender.java:403)
+	at org.apache.kafka.clients.producer.internals.Sender.runOnce(Sender.java:319)
+	at org.apache.kafka.clients.producer.internals.Sender.run(Sender.java:235)
+	at java.base/java.lang.Thread.run(Thread.java:833)
+java.lang.IllegalStateException: Attempt to send a request to node 2 which is not ready.true true false
+	at org.apache.kafka.clients.ProducerNetworkClient.doSend(ProducerNetworkClient.java:467)
+	at org.apache.kafka.clients.ProducerNetworkClient.send(ProducerNetworkClient.java:442)
+	at org.apache.kafka.clients.producer.internals.Sender.sendProduceRequest(Sender.java:970)
+	at org.apache.kafka.clients.producer.internals.Sender.sendProduceRequests(Sender.java:834)
+	at org.apache.kafka.clients.producer.internals.Sender.sendProducerData(Sender.java:403)
+	at org.apache.kafka.clients.producer.internals.Sender.runOnce(Sender.java:319)
+	at org.apache.kafka.clients.producer.internals.Sender.run(Sender.java:235)
+	at java.base/java.lang.Thread.run(Thread.java:833)
+java.lang.IllegalStateException: Attempt to send a request to node 2 which is not ready.true true false
+	at org.apache.kafka.clients.ProducerNetworkClient.doSend(ProducerNetworkClient.java:467)
+	at org.apache.kafka.clients.ProducerNetworkClient.send(ProducerNetworkClient.java:442)
+	at org.apache.kafka.clients.producer.internals.Sender.sendProduceRequest(Sender.java:970)
+	at org.apache.kafka.clients.producer.internals.Sender.sendProduceRequests(Sender.java:834)
+	at org.apache.kafka.clients.producer.internals.Sender.sendProducerData(Sender.java:403)
+	at org.apache.kafka.clients.producer.internals.Sender.runOnce(Sender.java:319)
+	at org.apache.kafka.clients.producer.internals.Sender.run(Sender.java:235)
+	at java.base/java.lang.Thread.run(Thread.java:833)
+java.lang.IllegalStateException: Attempt to send a request to node 2 which is not ready.true true false
+	at org.apache.kafka.clients.ProducerNetworkClient.doSend(ProducerNetworkClient.java:467)
+	at org.apache.kafka.clients.ProducerNetworkClient.send(ProducerNetworkClient.java:442)
+	at org.apache.kafka.clients.producer.internals.Sender.sendProduceRequest(Sender.java:970)
+	at org.apache.kafka.clients.producer.internals.Sender.sendProduceRequests(Sender.java:834)
+	at org.apache.kafka.clients.producer.internals.Sender.sendProducerData(Sender.java:403)
+	at org.apache.kafka.clients.producer.internals.Sender.runOnce(Sender.java:319)
+	at org.apache.kafka.clients.producer.internals.Sender.run(Sender.java:235)
+	at java.base/java.lang.Thread.run(Thread.java:833)
+java.lang.IllegalStateException: Attempt to send a request to node 2 which is not ready.true true false
+	at org.apache.kafka.clients.ProducerNetworkClient.doSend(ProducerNetworkClient.java:467)
+	at org.apache.kafka.clients.ProducerNetworkClient.send(ProducerNetworkClient.java:442)
+	at org.apache.kafka.clients.producer.internals.Sender.sendProduceRequest(Sender.java:970)
+	at org.apache.kafka.clients.producer.internals.Sender.sendProduceRequests(Sender.java:834)
+	at org.apache.kafka.clients.producer.internals.Sender.sendProducerData(Sender.java:403)
+	at org.apache.kafka.clients.producer.internals.Sender.runOnce(Sender.java:319)
+	at org.apache.kafka.clients.producer.internals.Sender.run(Sender.java:235)
+	at java.base/java.lang.Thread.run(Thread.java:833)
+java.lang.IllegalStateException: Attempt to send a request to node 2 which is not ready.true true false
+	at org.apache.kafka.clients.ProducerNetworkClient.doSend(ProducerNetworkClient.java:467)
+	at org.apache.kafka.clients.ProducerNetworkClient.send(ProducerNetworkClient.java:442)
+	at org.apache.kafka.clients.producer.internals.Sender.sendProduceRequest(Sender.java:970)
+	at org.apache.kafka.clients.producer.internals.Sender.sendProduceRequests(Sender.java:834)
+	at org.apache.kafka.clients.producer.internals.Sender.sendProducerData(Sender.java:403)
+	at org.apache.kafka.clients.producer.internals.Sender.runOnce(Sender.java:319)
+	at org.apache.kafka.clients.producer.internals.Sender.run(Sender.java:235)
+	at java.base/java.lang.Thread.run(Thread.java:833)
+java.lang.IllegalStateException: Attempt to send a request to node 2 which is not ready.true true false
+	at org.apache.kafka.clients.ProducerNetworkClient.doSend(ProducerNetworkClient.java:467)
+	at org.apache.kafka.clients.ProducerNetworkClient.send(ProducerNetworkClient.java:442)
+	at org.apache.kafka.clients.producer.internals.Sender.sendProduceRequest(Sender.java:970)
+	at org.apache.kafka.clients.producer.internals.Sender.sendProduceRequests(Sender.java:834)
+	at org.apache.kafka.clients.producer.internals.Sender.sendProducerData(Sender.java:403)
+	at org.apache.kafka.clients.producer.internals.Sender.runOnce(Sender.java:319)
+	at org.apache.kafka.clients.producer.internals.Sender.run(Sender.java:235)
+	at java.base/java.lang.Thread.run(Thread.java:833)
+java.lang.IllegalStateException: Attempt to send a request to node 2 which is not ready.true true false
+	at org.apache.kafka.clients.ProducerNetworkClient.doSend(ProducerNetworkClient.java:467)
+	at org.apache.kafka.clients.ProducerNetworkClient.send(ProducerNetworkClient.java:442)
+	at org.apache.kafka.clients.producer.internals.Sender.sendProduceRequest(Sender.java:970)
+	at org.apache.kafka.clients.producer.internals.Sender.sendProduceRequests(Sender.java:834)
+	at org.apache.kafka.clients.producer.internals.Sender.sendProducerData(Sender.java:403)
+	at org.apache.kafka.clients.producer.internals.Sender.runOnce(Sender.java:319)
+	at org.apache.kafka.clients.producer.internals.Sender.run(Sender.java:235)
+	at java.base/java.lang.Thread.run(Thread.java:833)
+java.lang.IllegalStateException: Attempt to send a request to node 2 which is not ready.true true false
+	at org.apache.kafka.clients.ProducerNetworkClient.doSend(ProducerNetworkClient.java:467)
+	at org.apache.kafka.clients.ProducerNetworkClient.send(ProducerNetworkClient.java:442)
+	at org.apache.kafka.clients.producer.internals.Sender.sendProduceRequest(Sender.java:970)
+	at org.apache.kafka.clients.producer.internals.Sender.sendProduceRequests(Sender.java:834)
+	at org.apache.kafka.clients.producer.internals.Sender.sendProducerData(Sender.java:403)
+	at org.apache.kafka.clients.producer.internals.Sender.runOnce(Sender.java:319)
+	at org.apache.kafka.clients.producer.internals.Sender.run(Sender.java:235)
+	at java.base/java.lang.Thread.run(Thread.java:833)
+java.lang.IllegalStateException: Attempt to send a request to node 2 which is not ready.true true false
+	at org.apache.kafka.clients.ProducerNetworkClient.doSend(ProducerNetworkClient.java:467)
+	at org.apache.kafka.clients.ProducerNetworkClient.send(ProducerNetworkClient.java:442)
+	at org.apache.kafka.clients.producer.internals.Sender.sendProduceRequest(Sender.java:970)
+	at org.apache.kafka.clients.producer.internals.Sender.sendProduceRequests(Sender.java:834)
+	at org.apache.kafka.clients.producer.internals.Sender.sendProducerData(Sender.java:403)
+	at org.apache.kafka.clients.producer.internals.Sender.runOnce(Sender.java:319)
+	at org.apache.kafka.clients.producer.internals.Sender.run(Sender.java:235)
+	at java.base/java.lang.Thread.run(Thread.java:833)
+java.lang.IllegalStateException: Attempt to send a request to node 2 which is not ready.true true false
+	at org.apache.kafka.clients.ProducerNetworkClient.doSend(ProducerNetworkClient.java:467)
+	at org.apache.kafka.clients.ProducerNetworkClient.send(ProducerNetworkClient.java:442)
+	at org.apache.kafka.clients.producer.internals.Sender.sendProduceRequest(Sender.java:970)
+	at org.apache.kafka.clients.producer.internals.Sender.sendProduceRequests(Sender.java:834)
+	at org.apache.kafka.clients.producer.internals.Sender.sendProducerData(Sender.java:403)
+	at org.apache.kafka.clients.producer.internals.Sender.runOnce(Sender.java:319)
+	at org.apache.kafka.clients.producer.internals.Sender.run(Sender.java:235)
+	at java.base/java.lang.Thread.run(Thread.java:833)
+java.lang.IllegalStateException: Attempt to send a request to node 2 which is not ready.true true false
+	at org.apache.kafka.clients.ProducerNetworkClient.doSend(ProducerNetworkClient.java:467)
+	at org.apache.kafka.clients.ProducerNetworkClient.send(ProducerNetworkClient.java:442)
+	at org.apache.kafka.clients.producer.internals.Sender.sendProduceRequest(Sender.java:970)
+	at org.apache.kafka.clients.producer.internals.Sender.sendProduceRequests(Sender.java:834)
+	at org.apache.kafka.clients.producer.internals.Sender.sendProducerData(Sender.java:403)
+	at org.apache.kafka.clients.producer.internals.Sender.runOnce(Sender.java:319)
+	at org.apache.kafka.clients.producer.internals.Sender.run(Sender.java:235)
+	at java.base/java.lang.Thread.run(Thread.java:833)
+java.lang.IllegalStateException: Attempt to send a request to node 2 which is not ready.true true false
+	at org.apache.kafka.clients.ProducerNetworkClient.doSend(ProducerNetworkClient.java:467)
+	at org.apache.kafka.clients.ProducerNetworkClient.send(ProducerNetworkClient.java:442)
+	at org.apache.kafka.clients.producer.internals.Sender.sendProduceRequest(Sender.java:970)
+	at org.apache.kafka.clients.producer.internals.Sender.sendProduceRequests(Sender.java:834)
+	at org.apache.kafka.clients.producer.internals.Sender.sendProducerData(Sender.java:403)
+	at org.apache.kafka.clients.producer.internals.Sender.runOnce(Sender.java:319)
+	at org.apache.kafka.clients.producer.internals.Sender.run(Sender.java:235)
+	at java.base/java.lang.Thread.run(Thread.java:833)
+java.lang.IllegalStateException: Attempt to send a request to node 2 which is not ready.true true false
+	at org.apache.kafka.clients.ProducerNetworkClient.doSend(ProducerNetworkClient.java:467)
+	at org.apache.kafka.clients.ProducerNetworkClient.send(ProducerNetworkClient.java:442)
+	at org.apache.kafka.clients.producer.internals.Sender.sendProduceRequest(Sender.java:970)
+	at org.apache.kafka.clients.producer.internals.Sender.sendProduceRequests(Sender.java:834)
+	at org.apache.kafka.clients.producer.internals.Sender.sendProducerData(Sender.java:403)
+	at org.apache.kafka.clients.producer.internals.Sender.runOnce(Sender.java:319)
+	at org.apache.kafka.clients.producer.internals.Sender.run(Sender.java:235)
+	at java.base/java.lang.Thread.run(Thread.java:833)
+java.lang.IllegalStateException: Attempt to send a request to node 1 which is not ready.true true false
+	at org.apache.kafka.clients.ProducerNetworkClient.doSend(ProducerNetworkClient.java:467)
+	at org.apache.kafka.clients.ProducerNetworkClient.send(ProducerNetworkClient.java:442)
+	at org.apache.kafka.clients.producer.internals.Sender.sendProduceRequest(Sender.java:952)
+	at org.apache.kafka.clients.producer.internals.Sender.sendProduceRequests(Sender.java:834)
+	at org.apache.kafka.clients.producer.internals.Sender.sendProducerData(Sender.java:403)
+	at org.apache.kafka.clients.producer.internals.Sender.runOnce(Sender.java:319)
+	at org.apache.kafka.clients.producer.internals.Sender.run(Sender.java:235)
+	at java.base/java.lang.Thread.run(Thread.java:833)
+java.lang.IllegalStateException: Attempt to send a request to node 2 which is not ready.true true false
+	at org.apache.kafka.clients.ProducerNetworkClient.doSend(ProducerNetworkClient.java:467)
+	at org.apache.kafka.clients.ProducerNetworkClient.send(ProducerNetworkClient.java:442)
+	at org.apache.kafka.clients.producer.internals.Sender.sendProduceRequest(Sender.java:970)
+	at org.apache.kafka.clients.producer.internals.Sender.sendProduceRequests(Sender.java:834)
+	at org.apache.kafka.clients.producer.internals.Sender.sendProducerData(Sender.java:403)
+	at org.apache.kafka.clients.producer.internals.Sender.runOnce(Sender.java:319)
+	at org.apache.kafka.clients.producer.internals.Sender.run(Sender.java:235)
+	at java.base/java.lang.Thread.run(Thread.java:833)
+java.lang.IllegalStateException: Attempt to send a request to node 2 which is not ready.true true false
+	at org.apache.kafka.clients.ProducerNetworkClient.doSend(ProducerNetworkClient.java:467)
+	at org.apache.kafka.clients.ProducerNetworkClient.send(ProducerNetworkClient.java:442)
+	at org.apache.kafka.clients.producer.internals.Sender.sendProduceRequest(Sender.java:970)
+	at org.apache.kafka.clients.producer.internals.Sender.sendProduceRequests(Sender.java:834)
+	at org.apache.kafka.clients.producer.internals.Sender.sendProducerData(Sender.java:403)
+	at org.apache.kafka.clients.producer.internals.Sender.runOnce(Sender.java:319)
+	at org.apache.kafka.clients.producer.internals.Sender.run(Sender.java:235)
+	at java.base/java.lang.Thread.run(Thread.java:833)
+java.lang.IllegalStateException: Attempt to send a request to node 2 which is not ready.true true false
+	at org.apache.kafka.clients.ProducerNetworkClient.doSend(ProducerNetworkClient.java:467)
+	at org.apache.kafka.clients.ProducerNetworkClient.send(ProducerNetworkClient.java:442)
+	at org.apache.kafka.clients.producer.internals.Sender.sendProduceRequest(Sender.java:970)
+	at org.apache.kafka.clients.producer.internals.Sender.sendProduceRequests(Sender.java:834)
+	at org.apache.kafka.clients.producer.internals.Sender.sendProducerData(Sender.java:403)
+	at org.apache.kafka.clients.producer.internals.Sender.runOnce(Sender.java:319)
+	at org.apache.kafka.clients.producer.internals.Sender.run(Sender.java:235)
+	at java.base/java.lang.Thread.run(Thread.java:833)
+java.lang.IllegalStateException: Attempt to send a request to node 2 which is not ready.true true false
+	at org.apache.kafka.clients.ProducerNetworkClient.doSend(ProducerNetworkClient.java:467)
+	at org.apache.kafka.clients.ProducerNetworkClient.send(ProducerNetworkClient.java:442)
+	at org.apache.kafka.clients.producer.internals.Sender.sendProduceRequest(Sender.java:970)
+	at org.apache.kafka.clients.producer.internals.Sender.sendProduceRequests(Sender.java:834)
+	at org.apache.kafka.clients.producer.internals.Sender.sendProducerData(Sender.java:403)
+	at org.apache.kafka.clients.producer.internals.Sender.runOnce(Sender.java:319)
+	at org.apache.kafka.clients.producer.internals.Sender.run(Sender.java:235)
+	at java.base/java.lang.Thread.run(Thread.java:833)
+[2022-04-15 09:29:16,595] ERROR [Producer clientId=console-producer] The broker returned org.apache.kafka.common.errors.OutOfOrderSequenceException: The broker received an out of order sequence number. for topic-partition test3-1 with producerId 0, epoch 11, and sequence number 225 (org.apache.kafka.clients.producer.internals.TransactionManager)
+[2022-04-15 09:29:16,598] INFO [Producer clientId=console-producer] ProducerId set to 0 with epoch 12 (org.apache.kafka.clients.producer.internals.TransactionManager)
+[2022-04-15 09:29:16,598] INFO Resetting sequence number of batch with current sequence 240 for partition test3-1 to 0 (org.apache.kafka.clients.producer.internals.ProducerBatch)
+[2022-04-15 09:29:16,598] INFO Resetting sequence number of batch with current sequence 270 for partition test3-1 to 15 (org.apache.kafka.clients.producer.internals.ProducerBatch)
+[2022-04-15 09:29:16,598] INFO Resetting sequence number of batch with current sequence 285 for partition test3-1 to 30 (org.apache.kafka.clients.producer.internals.ProducerBatch)
+java.lang.IllegalStateException: Attempt to send a request to node 2 which is not ready.true true false
+	at org.apache.kafka.clients.ProducerNetworkClient.doSend(ProducerNetworkClient.java:467)
+	at org.apache.kafka.clients.ProducerNetworkClient.send(ProducerNetworkClient.java:442)
+	at org.apache.kafka.clients.producer.internals.Sender.sendProduceRequest(Sender.java:970)
+	at org.apache.kafka.clients.producer.internals.Sender.sendProduceRequests(Sender.java:834)
+	at org.apache.kafka.clients.producer.internals.Sender.sendProducerData(Sender.java:403)
+	at org.apache.kafka.clients.producer.internals.Sender.runOnce(Sender.java:319)
+	at org.apache.kafka.clients.producer.internals.Sender.run(Sender.java:235)
+	at java.base/java.lang.Thread.run(Thread.java:833)
+[2022-04-15 09:29:16,623] ERROR [Producer clientId=console-producer] The broker returned org.apache.kafka.common.errors.OutOfOrderSequenceException: The broker received an out of order sequence number. for topic-partition test3-1 with producerId 0, epoch 12, and sequence number 45 (org.apache.kafka.clients.producer.internals.TransactionManager)
+[2022-04-15 09:29:16,623] INFO [Producer clientId=console-producer] ProducerId set to 0 with epoch 13 (org.apache.kafka.clients.producer.internals.TransactionManager)
+[2022-04-15 09:29:16,624] INFO Resetting sequence number of batch with current sequence 0 for partition test3-1 to 0 (org.apache.kafka.clients.producer.internals.ProducerBatch)
+[2022-04-15 09:29:16,624] INFO Resetting sequence number of batch with current sequence 60 for partition test3-1 to 15 (org.apache.kafka.clients.producer.internals.ProducerBatch)
+[2022-04-15 09:29:16,624] INFO Resetting sequence number of batch with current sequence 75 for partition test3-1 to 30 (org.apache.kafka.clients.producer.internals.ProducerBatch)
+[2022-04-15 09:29:16,624] INFO Resetting sequence number of batch with current sequence 90 for partition test3-1 to 45 (org.apache.kafka.clients.producer.internals.ProducerBatch)
+[2022-04-15 09:29:16,624] INFO Resetting sequence number of batch with current sequence 105 for partition test3-1 to 60 (org.apache.kafka.clients.producer.internals.ProducerBatch)
+[2022-04-15 09:29:16,627] ERROR [Producer clientId=console-producer] The broker returned org.apache.kafka.common.errors.OutOfOrderSequenceException: The broker received an out of order sequence number. for topic-partition test3-1 with producerId 0, epoch 13, and sequence number 15 (org.apache.kafka.clients.producer.internals.TransactionManager)
+[2022-04-15 09:29:16,627] INFO [Producer clientId=console-producer] ProducerId set to 0 with epoch 14 (org.apache.kafka.clients.producer.internals.TransactionManager)
+[2022-04-15 09:29:16,627] INFO Resetting sequence number of batch with current sequence 0 for partition test3-1 to 0 (org.apache.kafka.clients.producer.internals.ProducerBatch)
+[2022-04-15 09:29:16,627] INFO Resetting sequence number of batch with current sequence 30 for partition test3-1 to 15 (org.apache.kafka.clients.producer.internals.ProducerBatch)
+[2022-04-15 09:29:16,627] INFO Resetting sequence number of batch with current sequence 45 for partition test3-1 to 30 (org.apache.kafka.clients.producer.internals.ProducerBatch)
+[2022-04-15 09:29:16,627] INFO Resetting sequence number of batch with current sequence 60 for partition test3-1 to 45 (org.apache.kafka.clients.producer.internals.ProducerBatch)
+[2022-04-15 09:29:16,628] INFO Resetting sequence number of batch with current sequence 75 for partition test3-1 to 60 (org.apache.kafka.clients.producer.internals.ProducerBatch)
+java.lang.IllegalStateException: Attempt to send a request to node 2 which is not ready.true true false
+	at org.apache.kafka.clients.ProducerNetworkClient.doSend(ProducerNetworkClient.java:467)
+	at org.apache.kafka.clients.ProducerNetworkClient.send(ProducerNetworkClient.java:442)
+	at org.apache.kafka.clients.producer.internals.Sender.sendProduceRequest(Sender.java:970)
+	at org.apache.kafka.clients.producer.internals.Sender.sendProduceRequests(Sender.java:834)
+	at org.apache.kafka.clients.producer.internals.Sender.sendProducerData(Sender.java:403)
+	at org.apache.kafka.clients.producer.internals.Sender.runOnce(Sender.java:319)
+	at org.apache.kafka.clients.producer.internals.Sender.run(Sender.java:235)
+	at java.base/java.lang.Thread.run(Thread.java:833)
+[2022-04-15 09:29:16,630] WARN [Producer clientId=console-producer] Got error produce response with correlation id 164 on topic-partition test3-1, retrying (2 attempts left). Error: OUT_OF_ORDER_SEQUENCE_NUMBER (org.apache.kafka.clients.producer.internals.Sender)
+[2022-04-15 09:29:16,632] WARN [Producer clientId=console-producer] Got error produce response with correlation id 166 on topic-partition test3-1, retrying (2 attempts left). Error: OUT_OF_ORDER_SEQUENCE_NUMBER (org.apache.kafka.clients.producer.internals.Sender)
+[2022-04-15 09:29:16,637] WARN [Producer clientId=console-producer] Got error produce response with correlation id 172 on topic-partition test3-1, retrying (2 attempts left). Error: OUT_OF_ORDER_SEQUENCE_NUMBER (org.apache.kafka.clients.producer.internals.Sender)
