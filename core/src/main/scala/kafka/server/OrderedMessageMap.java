@@ -50,11 +50,17 @@ public class OrderedMessageMap
         return hMap.get(key);
     }
 
+
     public void removeWithNoValidBytes(TopicPartition key) //hsagar : used with highwatermark
     {
         ConcurrentHashMap<MessageID , MemoryRecords> memMap = get(key);
         boolean retVal = memMap.entrySet().removeIf(e -> (e.getValue().validBytes == -2));
         //System.out.println("removeWithNoValidBytes = " + retVal);
+    }
+
+    public void put(TopicPartition key,  ConcurrentHashMap<MessageID , MemoryRecords> memMap)
+    {
+        hMap.put(key,memMap);
     }
 
     public void put(TopicPartition key, MessageID producerIdAndEpoch , MemoryRecords message)
