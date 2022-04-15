@@ -942,7 +942,7 @@ public class Sender implements Runnable {
                             new ProduceFollowerRequestData()
                                     .setAcks((short) 1)
                                     .setTimeoutMs(timeout)
-//                                    .setTransactionalId(transactionalId)
+                                    .setTransactionalId(transactionalId)
                                     .setTopicData(tpd2));
 
                     RequestCompletionHandler callback = response -> handleFollowerProduceResponse(response, recordsByPartition, time.milliseconds());

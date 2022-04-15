@@ -217,7 +217,9 @@ public class FetchResponse extends AbstractResponse {
 //            log.info("[follower][akshat] producerID"+syncData.producerID()+"  producerEpoch: "+syncData.producerEpoch());
 //            log.info("[follower][akshat] sequenceBegin"+syncData.sequenceBegin()+"  sequenceEnd: "+syncData.sequenceEnd());
             if(memRecords.containsKey(newKey) && end){
-                log.info("[akshat][follower] HOLE");
+                // If a hole is found, append till last message
+                log.info("[akshat][follower] HOLE at Begin: "+ syncData.sequenceBegin() +"End: "+ syncData.sequenceEnd());
+                return recordsList;
             }
 
             if(memRecords.containsKey(newKey))
