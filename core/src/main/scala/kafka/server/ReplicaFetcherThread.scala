@@ -170,7 +170,7 @@ class ReplicaFetcherThread(name: String,
   override def processInternalPartitionData(topicPartition: TopicPartition,
                                             fetchOffset: Long,
                                             partitionData: FetchData): Option[LogAppendInfo] = {
-    val logTrace = isTraceEnabled
+    val logTrace = false
     val partition = replicaMgr.getPartitionOrException(topicPartition)
     val log = partition.localLogOrException
     val records = toMemoryRecords(FetchResponse.recordsOrFail(partitionData))
@@ -217,7 +217,7 @@ class ReplicaFetcherThread(name: String,
   override def processPartitionData(topicPartition: TopicPartition,
                                     fetchOffset: Long,
                                     partitionData: FetchData): Option[LogAppendInfo] = {
-    val logTrace = true
+    val logTrace = false
     val partition = replicaMgr.getPartitionOrException(topicPartition)
     var fetchOffsets = fetchOffset
     //follower already batch
@@ -253,7 +253,7 @@ class ReplicaFetcherThread(name: String,
     var log = partition.localLogOrException
     for( i <- 0 until recordsList.size())
       {
-        info("Records iterator : "+i)
+//        info("Records iterator : "+i)
         val records = recordsList.get(i);
         maybeWarnIfOversizedRecords(records, topicPartition)
 

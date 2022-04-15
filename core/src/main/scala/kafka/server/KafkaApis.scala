@@ -703,8 +703,8 @@ class KafkaApis(val requestChannel: RequestChannel,
         if (batch.hasProducerId){
           OrderedListMapSingleton.hMap.put(topicPartition, new MessageID(batch.producerId(), batch.producerEpoch() ,
             batch.baseSequence() , batch.lastSequence() ) )
-          info("[leader][akshat]producerId: "+batch.producerId()+" producerEpoch: "+batch.producerEpoch())
-          info("[leader][akshat]baseSequence: "+batch.baseSequence()+" lastSequence: "+batch.lastSequence())
+//          info("[leader][akshat]producerId: "+batch.producerId()+" producerEpoch: "+batch.producerEpoch())
+//          info("[leader][akshat]baseSequence: "+batch.baseSequence()+" lastSequence: "+batch.lastSequence())
         }
       }
 
@@ -909,8 +909,8 @@ class KafkaApis(val requestChannel: RequestChannel,
                                 partitionData: FetchResponseData.PartitionData): FetchResponseData.PartitionData = {
       val logConfig = replicaManager.getLogConfig(tp)
       val offset = fetchContext.getFetchOffset(tp).get
-      info("[akshat][leader] size of order list on leader :" + OrderedListMapSingleton.hMap.size(tp) + " " +  OrderedListMapSingleton.hMap.sizeOffsets(tp) )
-      info("[akshat][leader] Fetch Offset :" +offset.toInt)
+//      info("[akshat][leader] size of order list on leader :" + OrderedListMapSingleton.hMap.size(tp) + " " +  OrderedListMapSingleton.hMap.sizeOffsets(tp) )
+//      info("[akshat][leader] Fetch Offset :" +offset.toInt)
 
       if (logConfig.exists(_.compressionType == ZStdCompressionCodec.name) && versionId < 10) {
         trace(s"Fetching messages is disabled for ZStandard compressed partition $tp. Sending unsupported version response to $clientId.")
