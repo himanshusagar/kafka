@@ -37,6 +37,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
 import static org.apache.kafka.common.requests.FetchMetadata.INVALID_SESSION_ID;
@@ -203,7 +204,9 @@ public class FetchResponse extends AbstractResponse {
 
 
     //hsagar
-    public static List<MemoryRecords> recordsOrFailUsingOrder(HashMap<MessageID, MemoryRecords> memRecords , List<FetchResponseData.FollowerSyncData> msgOrders)
+    public static List<MemoryRecords> recordsOrFailUsingOrder(ConcurrentHashMap<MessageID, MemoryRecords> memRecords ,
+                                                              List<FetchResponseData.FollowerSyncData> msgOrders,
+                                                              long highWaterMark)
     {
         boolean end = false;
         List<MemoryRecords> recordsList = new ArrayList<>();
@@ -221,6 +224,10 @@ public class FetchResponse extends AbstractResponse {
             {
                 MemoryRecords record = memRecords.get(newKey);
                 recordsList.add(record);
+                //hsagar : marking for deletion
+                if( syncData.sequenceEnd() < highWaterMark)
+                    record.validBytes = -2;
+                memRecords.remove(newKey);
             }
             else{
                 end = true;
