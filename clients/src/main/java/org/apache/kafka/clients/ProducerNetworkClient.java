@@ -460,11 +460,15 @@ public class ProducerNetworkClient implements KafkaClient {
             // READY state.)
             if (!canSendRequest(nodeId, now))
             {
-
+                Deque<ProducerNetworkClient.InFlightRequest> queue = inFlightRequests.requests.get(nodeId);
                 throw new IllegalStateException("Attempt to send a request to node " + nodeId + " which is not ready."
-                        + connectionStates.isReady(nodeId, now) + " "
-                        + selector.isChannelReady(nodeId) + " "
-                        + inFlightRequests.canSendMore(nodeId));
+                        + "isReady: " + connectionStates.isReady(nodeId, now) + " "
+                        + "isChannelReady: " + selector.isChannelReady(nodeId) + " "
+                        + "canSendMore: " + inFlightRequests.canSendMore(nodeId) + " "
+                        + "iFR count: " + inFlightRequests.count(nodeId) + " "
+                        + "iFR null: " + (queue== null) + " "
+                        + "iFR empty: " + queue.isEmpty() + " "
+                        + "iFR peek first send: " + queue.peekFirst().send.completed());
             }
 
         }

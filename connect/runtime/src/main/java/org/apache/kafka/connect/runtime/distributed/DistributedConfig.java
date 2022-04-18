@@ -230,6 +230,12 @@ public class DistributedConfig extends WorkerConfig {
                     atLeast(0),
                     ConfigDef.Importance.MEDIUM,
                     CommonClientConfigs.SEND_BUFFER_DOC)
+            .define(CommonClientConfigs.SLEEP_TIMER_CONFIG,
+                    ConfigDef.Type.INT,
+                    0,
+                    atLeast(0),
+                    ConfigDef.Importance.MEDIUM,
+                    CommonClientConfigs.SLEEP_TIMER_DOC)
             .define(CommonClientConfigs.RECEIVE_BUFFER_CONFIG,
                     ConfigDef.Type.INT,
                     32 * 1024,

@@ -59,6 +59,10 @@ public class CommonClientConfigs {
     public static final String SEND_BUFFER_DOC = "The size of the TCP send buffer (SO_SNDBUF) to use when sending data. If the value is -1, the OS default will be used.";
     public static final int SEND_BUFFER_LOWER_BOUND = -1;
 
+    public static final String SLEEP_TIMER_CONFIG = "sleep.timer";
+    public static final String SLEEP_TIMER_DOC = "Sleep Timer between successive requests";
+//    public static final int SLEEP_TIMER_BOUND = 0;
+
     public static final String RECEIVE_BUFFER_CONFIG = "receive.buffer.bytes";
     public static final String RECEIVE_BUFFER_DOC = "The size of the TCP receive buffer (SO_RCVBUF) to use when reading data. If the value is -1, the OS default will be used.";
     public static final int RECEIVE_BUFFER_LOWER_BOUND = -1;

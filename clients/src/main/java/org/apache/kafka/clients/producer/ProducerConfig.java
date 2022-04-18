@@ -142,6 +142,9 @@ public class ProducerConfig extends AbstractConfig {
     /** <code>send.buffer.bytes</code> */
     public static final String SEND_BUFFER_CONFIG = CommonClientConfigs.SEND_BUFFER_CONFIG;
 
+    /** <code>sleep.timer</code> */
+    public static final String SLEEP_TIMER_CONFIG = CommonClientConfigs.SLEEP_TIMER_CONFIG;
+
     /** <code>receive.buffer.bytes</code> */
     public static final String RECEIVE_BUFFER_CONFIG = CommonClientConfigs.RECEIVE_BUFFER_CONFIG;
 

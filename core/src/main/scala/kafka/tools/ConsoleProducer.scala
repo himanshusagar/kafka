@@ -48,7 +48,7 @@ object ConsoleProducer {
         var record: ProducerRecord[Array[Byte], Array[Byte]] = null
         do {
           if (config.flood){
-            record = reader.messageFlood()
+            record = reader.messageFlood(config.sleep_timer)
           }
           else {
             record = reader.readMessage()
@@ -121,7 +121,8 @@ object ConsoleProducer {
       props, ProducerConfig.METADATA_MAX_AGE_CONFIG, config.options, config.metadataExpiryMsOpt)
     CommandLineUtils.maybeMergeOptions(
       props, ProducerConfig.MAX_BLOCK_MS_CONFIG, config.options, config.maxBlockMsOpt)
-
+    CommandLineUtils.maybeMergeOptions(
+      props, ProducerConfig.SLEEP_TIMER_CONFIG, config.options, config.sleepTimerOpt)
     props
   }
 
@@ -228,6 +229,11 @@ object ConsoleProducer {
       .withRequiredArg
       .describedAs("config file")
       .ofType(classOf[String])
+    val sleepTimerOpt = parser.accepts("sleep", "Sleep timer between successive produce requests. Default is 0.")
+      .withRequiredArg
+      .describedAs("sleep timer")
+      .ofType(classOf[java.lang.Integer])
+      .defaultsTo(0)
 
     options = tryParse(parser, args)
 
@@ -245,6 +251,7 @@ object ConsoleProducer {
 
     val sync = options.has(syncOpt)
     val flood = options.has(floodOpt)
+    val sleep_timer = options.valueOf(sleepTimerOpt)
 
     val compressionCodecOptionValue = options.valueOf(compressionCodecOpt)
     val compressionCodec = if (options.has(compressionCodecOpt))
@@ -287,7 +294,8 @@ object ConsoleProducer {
       reader = new BufferedReader(new InputStreamReader(inputStream, StandardCharsets.UTF_8))
     }
 
-    override def messageFlood() = {
+    override def messageFlood(sleep_timer: Int) = {
+      Thread.sleep(sleep_timer)
       val b = new Array[Byte](1024)
       val randObj = new Random();
 

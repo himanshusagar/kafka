@@ -25,7 +25,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 final class ProducerInFlightRequests {
 
     private final int maxInFlightRequestsPerConnection;
-    private final Map<String, Deque<ProducerNetworkClient.InFlightRequest>> requests = new HashMap<>();
+    public final Map<String, Deque<ProducerNetworkClient.InFlightRequest>> requests = new HashMap<>();
     /** Thread safe total number of in flight requests. */
     private final AtomicInteger inFlightRequestCount = new AtomicInteger(0);
 
@@ -94,7 +94,7 @@ final class ProducerInFlightRequests {
     public boolean canSendMore(String node) {
         Deque<ProducerNetworkClient.InFlightRequest> queue = requests.get(node);
         return queue == null || queue.isEmpty() ||
-               (queue.peekFirst().send.completed() && queue.size() < this.maxInFlightRequestsPerConnection);
+               (queue.size() < this.maxInFlightRequestsPerConnection);
     }
 
     /**
