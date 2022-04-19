@@ -64,9 +64,14 @@ import java.util.stream.Collectors;
 public class Sender implements Runnable {
 
     private final Logger log;
+    /* new map to store connection per partition*/
+    public Map<TopicPartition, KafkaClient> clientPartitions;
 
     /* the state of each nodes connection */
     private final KafkaClient client;
+
+    /* the state of each nodes connection for produce follower requests */
+    private final KafkaClient clientFollowerProduceRequests;
 
     /* the record accumulator that batches records */
     private final RecordAccumulator accumulator;
@@ -143,6 +148,43 @@ public class Sender implements Runnable {
         this.apiVersions = apiVersions;
         this.transactionManager = transactionManager;
         this.inFlightBatches = new HashMap<>();
+        this.clientPartitions = new HashMap<>();
+        this.clientFollowerProduceRequests = null;
+    }
+
+    public Sender(LogContext logContext,
+                  KafkaClient client,
+                  KafkaClient clientFollowerProduceRequests,
+                  ProducerMetadata metadata,
+                  RecordAccumulator accumulator,
+                  boolean guaranteeMessageOrder,
+                  int maxRequestSize,
+                  short acks,
+                  int retries,
+                  SenderMetricsRegistry metricsRegistry,
+                  Time time,
+                  int requestTimeoutMs,
+                  long retryBackoffMs,
+                  TransactionManager transactionManager,
+                  ApiVersions apiVersions) {
+        this.log = logContext.logger(Sender.class);
+        this.client = client;
+        this.accumulator = accumulator;
+        this.metadata = metadata;
+        this.guaranteeMessageOrder = guaranteeMessageOrder;
+        this.maxRequestSize = maxRequestSize;
+        this.running = true;
+        this.acks = acks;
+        this.retries = retries;
+        this.time = time;
+        this.sensors = new SenderMetrics(metricsRegistry, metadata, client, time);
+        this.requestTimeoutMs = requestTimeoutMs;
+        this.retryBackoffMs = retryBackoffMs;
+        this.apiVersions = apiVersions;
+        this.transactionManager = transactionManager;
+        this.inFlightBatches = new HashMap<>();
+        this.clientPartitions = new HashMap<>();
+        this.clientFollowerProduceRequests = clientFollowerProduceRequests;
     }
 
     public List<ProducerBatch> inFlightBatches(TopicPartition tp) {
@@ -351,9 +393,9 @@ public class Sender implements Runnable {
             }
         }
 
-        result.readyNodes = this.accumulator.allReplicaOrNoneNodeCheck(result.readyNodes , cluster , this.client , now);
+        //   result.readyNodes = this.accumulator.allReplicaOrNoneNodeCheck(result.readyNodes , cluster , this.client , now);
         // create produce requests
-        Map<Integer, List<ProducerBatch>> batches = this.accumulator.drainAkshat(cluster, result.readyNodes, this.maxRequestSize, now);
+        Map<Integer, List<ProducerBatch>> batches = this.accumulator.drain(cluster, result.readyNodes, this.maxRequestSize, now);
         addToInflightBatches(batches);
         if (guaranteeMessageOrder) {
             // Mute all the partitions drained
@@ -830,9 +872,164 @@ public class Sender implements Runnable {
      */
     private void sendProduceRequests(Map<Integer, List<ProducerBatch>> collated, long now) {
         Cluster cluster = metadata.fetch();
-        for (Map.Entry<Integer, List<ProducerBatch>> entry : collated.entrySet())
-            sendProduceRequest(now, entry.getKey(), acks, requestTimeoutMs, entry.getValue(), cluster);
+        Map <Integer, ProduceRequestData.TopicProduceDataCollection> leaderRecords = new HashMap<>();
+        Map <Integer, ProduceFollowerRequestData.TopicProduceDataCollection> followerRecords = new HashMap<>();
+        Map <Integer, Map<TopicPartition, ProducerBatch>> leaderRecordsByPartition  = new HashMap<>();
+        Map <Integer, Map<TopicPartition, ProducerBatch>> followerRecordsByPartition  = new HashMap<>();
+        Map <Integer, Byte> nodeMinUsedMagic = new HashMap<>();
+
+        fillRecords(nodeMinUsedMagic, collated, leaderRecords, followerRecords,
+                leaderRecordsByPartition, followerRecordsByPartition, cluster);
+
+        sendRecords(nodeMinUsedMagic, leaderRecords, followerRecords, leaderRecordsByPartition, followerRecordsByPartition,
+                now, requestTimeoutMs);
     }
+
+    private void sendRecords(Map <Integer, Byte> nodeMinUsedMagic,
+                             Map <Integer, ProduceRequestData.TopicProduceDataCollection> leaderRecords,
+                             Map <Integer, ProduceFollowerRequestData.TopicProduceDataCollection> followerRecords,
+                             Map <Integer, Map<TopicPartition, ProducerBatch>> leaderRecordsByPartition,
+                             Map <Integer, Map<TopicPartition, ProducerBatch>> followerRecordsByPartition,
+                             long now, int timeout)
+    {
+        for (Map.Entry<Integer, ProduceRequestData.TopicProduceDataCollection> entry : leaderRecords.entrySet()) {
+            int leaderNode = entry.getKey();
+            ProduceRequestData.TopicProduceDataCollection tpd = leaderRecords.get(leaderNode);
+            final Map<TopicPartition, ProducerBatch> recordsByPartition = leaderRecordsByPartition.get(leaderNode);
+            byte minUsedMagic = nodeMinUsedMagic.get(leaderNode);
+            String transactionalId = null;
+            if (transactionManager != null && transactionManager.isTransactional()) {
+                transactionalId = transactionManager.transactionalId();
+            }
+            ProduceRequest.Builder requestBuilder = ProduceRequest.forMagic(minUsedMagic,
+                    new ProduceRequestData()
+                            .setAcks((short) 1)
+                            .setTimeoutMs(timeout)
+                            .setTransactionalId(transactionalId)
+                            .setTopicData(tpd));
+
+            RequestCompletionHandler callback = response -> handleProduceResponse(response, recordsByPartition, time.milliseconds());
+
+            ClientRequest clientRequestFollower = client.newClientRequest(Integer.toString(leaderNode), requestBuilder, now, true,
+                    requestTimeoutMs, callback);
+            client.send(clientRequestFollower, now);
+        }
+        for (Map.Entry<Integer, ProduceFollowerRequestData.TopicProduceDataCollection> entry : followerRecords.entrySet()) {
+            int followerNode = entry.getKey();
+            ProduceFollowerRequestData.TopicProduceDataCollection tpd = followerRecords.get(followerNode);
+            final Map<TopicPartition, ProducerBatch> recordsByPartition = followerRecordsByPartition.get(followerNode);
+            byte minUsedMagic = nodeMinUsedMagic.get(followerNode);
+            String transactionalId = null;
+            if (transactionManager != null && transactionManager.isTransactional()) {
+                transactionalId = transactionManager.transactionalId();
+            }
+            ProduceFollowerRequest.Builder requestBuilder = ProduceFollowerRequest.forMagic(minUsedMagic,
+                    new ProduceFollowerRequestData()
+                            .setAcks((short) 1)
+                            .setTimeoutMs(timeout)
+                            .setTransactionalId(transactionalId)
+                            .setTopicData(tpd));
+
+            RequestCompletionHandler callback = response -> handleFollowerProduceResponse(response, recordsByPartition, time.milliseconds());
+
+            ClientRequest clientRequestFollower = clientFollowerProduceRequests.newClientRequest(Integer.toString(followerNode), requestBuilder, now, true,
+                    requestTimeoutMs, callback);
+            clientFollowerProduceRequests.send(clientRequestFollower, now);
+        }
+
+    }
+
+    private void fillRecords(Map <Integer, Byte> nodeMinUsedMagic,
+                             Map<Integer, List<ProducerBatch>>  collatedBatches,
+                             Map <Integer, ProduceRequestData.TopicProduceDataCollection> leaderRecords,
+                             Map <Integer, ProduceFollowerRequestData.TopicProduceDataCollection> followerRecords,
+                             Map <Integer, Map<TopicPartition, ProducerBatch>> leaderRecordsByPartition,
+                             Map <Integer, Map<TopicPartition, ProducerBatch>> followerRecordsByPartition,
+                             Cluster cluster)
+    {
+        for (Map.Entry<Integer, List<ProducerBatch>> entry : collatedBatches.entrySet()){
+            List<ProducerBatch> batches = entry.getValue();
+            if (batches.isEmpty()){
+                continue;
+            }
+            byte minUsedMagic = apiVersions.maxUsableProduceMagic();
+            for (ProducerBatch batch : batches) {
+                if (batch.magic() < minUsedMagic)
+                    minUsedMagic = batch.magic();
+            }
+            int leaderNode = entry.getKey();
+            nodeMinUsedMagic.put(leaderNode, minUsedMagic);
+            ProduceRequestData.TopicProduceDataCollection tpd = new ProduceRequestData.TopicProduceDataCollection();
+
+            for (ProducerBatch batch : batches)
+            {
+                List <Integer> followers = new ArrayList<>();
+                TopicPartition tp = batch.topicPartition;
+
+                // Get partition info to fetch all follower node information.
+                PartitionInfo partitionInfo = cluster.partition(tp);
+                for (Node follower: partitionInfo.replicas()){
+                    // Skip leader
+                    if (partitionInfo.leader() == follower){
+                        continue;
+                    }
+                    followers.add(follower.id());
+                }
+                MemoryRecords records = batch.records();
+
+                if (!records.hasMatchingMagic(minUsedMagic))
+                    records = batch.records().downConvert(minUsedMagic, 0, time).records();
+
+                ProduceRequestData.TopicProduceData tpData = tpd.find(tp.topic());
+                if (tpData == null) {
+                    tpData = new ProduceRequestData.TopicProduceData().setName(tp.topic());
+                    tpd.add(tpData);
+                }
+
+                tpData.partitionData().add(new ProduceRequestData.PartitionProduceData()
+                        .setIndex(tp.partition())
+                        .setRecords(records));
+
+                if (!leaderRecordsByPartition.containsKey(leaderNode)) {
+                    Map<TopicPartition, ProducerBatch> newLeaderRecordsByPartition = new HashMap<>();
+                    leaderRecordsByPartition.put(leaderNode, newLeaderRecordsByPartition);
+                }
+                leaderRecordsByPartition.get(leaderNode).put(tp, batch);
+
+                for(Integer followerID: followers) {
+                    ProduceFollowerRequestData.TopicProduceDataCollection tpdFollower;
+                    // if follower record already in map
+                    if (followerRecords.containsKey(followerID))
+                        tpdFollower = followerRecords.get(followerID);
+                    else{
+                        tpdFollower = new ProduceFollowerRequestData.TopicProduceDataCollection();
+                        followerRecords.put(followerID, tpdFollower);
+                    }
+                    ProduceFollowerRequestData.TopicProduceData tpDataFollower = tpdFollower.find(tp.topic());
+
+                    if (tpDataFollower == null) {
+                        tpDataFollower = new ProduceFollowerRequestData.TopicProduceData().setName(tp.topic());
+                        tpdFollower.add(tpDataFollower);
+                    }
+
+                    tpDataFollower.partitionData().add(new ProduceFollowerRequestData.PartitionProduceData()
+                            .setIndex(tp.partition())
+                            .setRecords(records));
+
+                    if (!followerRecordsByPartition.containsKey(followerID)) {
+                        Map<TopicPartition, ProducerBatch> newFollowerRecordsByPartition = new HashMap<>();
+                        followerRecordsByPartition.put(followerID, newFollowerRecordsByPartition);
+                    }
+                    followerRecordsByPartition.get(followerID).put(tp, batch);
+                    if (!nodeMinUsedMagic.containsKey(followerID))
+                        nodeMinUsedMagic.put(followerID, minUsedMagic);
+                }
+
+            }
+            leaderRecords.put(leaderNode, tpd);
+        }
+    }
+
 
     /**
      * Create a produce request from the given record batches
@@ -842,7 +1039,7 @@ public class Sender implements Runnable {
             return;
         int leaderID = 0;
         final Map<TopicPartition, ProducerBatch> recordsByPartition = new HashMap<>(batches.size());
-        List <Integer> followers = new ArrayList<Integer>();
+        List <Integer> followers = new ArrayList<>();
         // find the minimum magic version used when creating the record sets
         byte minUsedMagic = apiVersions.maxUsableProduceMagic();
         for (ProducerBatch batch : batches) {
@@ -913,9 +1110,6 @@ public class Sender implements Runnable {
 
             recordsByPartition.put(tp, batch);
         }
-
-
-
         /*
         ProduceRequest.Builder requestBuilder = ProduceRequest.forMagic(minUsedMagic,
                 new ProduceRequestData()
@@ -977,9 +1171,6 @@ public class Sender implements Runnable {
                 e.printStackTrace();
             }
         }
-
-
-
     }
 
     /**

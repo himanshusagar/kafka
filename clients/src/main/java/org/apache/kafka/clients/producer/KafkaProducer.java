@@ -260,6 +260,7 @@ public class KafkaProducer<K, V> implements Producer<K, V> {
     private final ProducerInterceptors<K, V> interceptors;
     private final ApiVersions apiVersions;
     private final TransactionManager transactionManager;
+    public LogContext logContext;
 
     /**
      * A producer is instantiated by providing a set of key-value pairs as configuration. Valid configuration strings
@@ -341,6 +342,7 @@ public class KafkaProducer<K, V> implements Producer<K, V> {
                 logContext = new LogContext(String.format("[Producer clientId=%s] ", clientId));
             else
                 logContext = new LogContext(String.format("[Producer clientId=%s, transactionalId=%s] ", clientId, transactionalId));
+            this.logContext = logContext;
             log = logContext.logger(KafkaProducer.class);
             log.trace("Starting the Kafka producer");
 
@@ -443,6 +445,34 @@ public class KafkaProducer<K, V> implements Producer<K, V> {
         }
     }
 
+    KafkaClient newClient(LogContext logContext, String metrics){
+        int maxInflightRequests = configureInflightRequests(producerConfig);
+        int requestTimeoutMs = producerConfig.getInt(ProducerConfig.REQUEST_TIMEOUT_MS_CONFIG);
+        ProducerMetrics metricsRegistry = new ProducerMetrics(this.metrics);
+        Sensor throttleTimeSensor = Sender.throttleTimeSensor(metricsRegistry.senderMetrics);
+        ChannelBuilder channelBuilder = ClientUtils.createChannelBuilder(producerConfig, time, logContext);
+
+        KafkaClient client =  new ProducerNetworkClient(
+            new Selector(producerConfig.getLong(ProducerConfig.CONNECTIONS_MAX_IDLE_MS_CONFIG),
+                    this.metrics, time, metrics, channelBuilder, logContext),
+            metadata,
+            clientId,
+            maxInflightRequests,
+            producerConfig.getLong(ProducerConfig.RECONNECT_BACKOFF_MS_CONFIG),
+            producerConfig.getLong(ProducerConfig.RECONNECT_BACKOFF_MAX_MS_CONFIG),
+            producerConfig.getInt(ProducerConfig.SEND_BUFFER_CONFIG),
+            producerConfig.getInt(ProducerConfig.RECEIVE_BUFFER_CONFIG),
+            requestTimeoutMs,
+            producerConfig.getLong(ProducerConfig.SOCKET_CONNECTION_SETUP_TIMEOUT_MS_CONFIG),
+            producerConfig.getLong(ProducerConfig.SOCKET_CONNECTION_SETUP_TIMEOUT_MAX_MS_CONFIG),
+            time,
+            true,
+            apiVersions,
+            throttleTimeSensor,
+            logContext);
+        return client;
+    }
+
     // visible for testing
     Sender newSender(LogContext logContext, KafkaClient kafkaClient, ProducerMetadata metadata) {
         int maxInflightRequests = configureInflightRequests(producerConfig);
@@ -450,27 +480,12 @@ public class KafkaProducer<K, V> implements Producer<K, V> {
         ChannelBuilder channelBuilder = ClientUtils.createChannelBuilder(producerConfig, time, logContext);
         ProducerMetrics metricsRegistry = new ProducerMetrics(this.metrics);
         Sensor throttleTimeSensor = Sender.throttleTimeSensor(metricsRegistry.senderMetrics);
-        KafkaClient client = kafkaClient != null ? kafkaClient : new ProducerNetworkClient(
-                new Selector(producerConfig.getLong(ProducerConfig.CONNECTIONS_MAX_IDLE_MS_CONFIG),
-                        this.metrics, time, "producer", channelBuilder, logContext),
-                metadata,
-                clientId,
-                maxInflightRequests,
-                producerConfig.getLong(ProducerConfig.RECONNECT_BACKOFF_MS_CONFIG),
-                producerConfig.getLong(ProducerConfig.RECONNECT_BACKOFF_MAX_MS_CONFIG),
-                producerConfig.getInt(ProducerConfig.SEND_BUFFER_CONFIG),
-                producerConfig.getInt(ProducerConfig.RECEIVE_BUFFER_CONFIG),
-                requestTimeoutMs,
-                producerConfig.getLong(ProducerConfig.SOCKET_CONNECTION_SETUP_TIMEOUT_MS_CONFIG),
-                producerConfig.getLong(ProducerConfig.SOCKET_CONNECTION_SETUP_TIMEOUT_MAX_MS_CONFIG),
-                time,
-                true,
-                apiVersions,
-                throttleTimeSensor,
-                logContext);
+        KafkaClient client = kafkaClient != null ? kafkaClient : newClient(logContext, "metrics-leader");
+        KafkaClient clientFollowerProduceRequests = newClient(logContext, "metrics-follower");
         short acks = configureAcks(producerConfig, log);
         return new Sender(logContext,
                 client,
+                clientFollowerProduceRequests,
                 metadata,
                 this.accumulator,
                 maxInflightRequests == 1,
@@ -952,6 +967,11 @@ public class KafkaProducer<K, V> implements Producer<K, V> {
             }
             int partition = partition(record, serializedKey, serializedValue, cluster);
             tp = new TopicPartition(record.topic(), partition);
+
+//            if(this.sender.clientPartitions.get(tp) == null){
+//                // for each partition a new kafka client is created
+//                this.sender.clientPartitions.put(tp, newClient(this.logContext));
+//            }
 
             setReadOnly(record.headers());
             Header[] headers = record.headers().toArray();

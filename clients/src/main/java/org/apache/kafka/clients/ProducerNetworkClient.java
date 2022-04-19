@@ -418,6 +418,7 @@ public class ProducerNetworkClient implements KafkaClient {
     public boolean isReady(Node node, long now) {
         // if we need to update our metadata now declare all requests unready to make metadata requests first
         // priority
+        log.info("checking isReady: "+node.toString());
         return !metadataUpdater.isUpdateDue(now) && canSendRequest(node.idString(), now);
     }
 
@@ -461,6 +462,14 @@ public class ProducerNetworkClient implements KafkaClient {
             if (!canSendRequest(nodeId, now))
             {
                 Deque<ProducerNetworkClient.InFlightRequest> queue = inFlightRequests.requests.get(nodeId);
+                if (queue== null){
+                    throw new IllegalStateException("Attempt to send a request to node " + nodeId + " which is not ready."
+                            + "isReady: " + connectionStates.isReady(nodeId, now) + " "
+                            + "isChannelReady: " + selector.isChannelReady(nodeId) + " "
+                            + "canSendMore: " + inFlightRequests.canSendMore(nodeId) + " "
+                            + "iFR count: " + inFlightRequests.count(nodeId) + " "
+                            + "iFR null: " + (queue== null) + " ");
+                }
                 throw new IllegalStateException("Attempt to send a request to node " + nodeId + " which is not ready."
                         + "isReady: " + connectionStates.isReady(nodeId, now) + " "
                         + "isChannelReady: " + selector.isChannelReady(nodeId) + " "
