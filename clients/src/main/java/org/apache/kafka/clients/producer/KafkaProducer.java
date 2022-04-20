@@ -16,11 +16,7 @@
  */
 package org.apache.kafka.clients.producer;
 
-import org.apache.kafka.clients.ApiVersions;
-import org.apache.kafka.clients.ClientUtils;
-import org.apache.kafka.clients.CommonClientConfigs;
-import org.apache.kafka.clients.KafkaClient;
-import org.apache.kafka.clients.ProducerNetworkClient;
+import org.apache.kafka.clients.*;
 import org.apache.kafka.clients.consumer.ConsumerGroupMetadata;
 import org.apache.kafka.clients.consumer.KafkaConsumer;
 import org.apache.kafka.clients.consumer.OffsetAndMetadata;
@@ -482,10 +478,10 @@ public class KafkaProducer<K, V> implements Producer<K, V> {
         Sensor throttleTimeSensor = Sender.throttleTimeSensor(metricsRegistry.senderMetrics);
         KafkaClient client = kafkaClient != null ? kafkaClient : newClient(logContext, "metrics-leader");
         KafkaClient clientFollowerProduceRequests = newClient(logContext, "metrics-follower");
+        MultiNetworkClient multiNetworkClient = new MultiNetworkClient(client , clientFollowerProduceRequests);
         short acks = configureAcks(producerConfig, log);
         return new Sender(logContext,
-                client,
-                clientFollowerProduceRequests,
+                multiNetworkClient,
                 metadata,
                 this.accumulator,
                 maxInflightRequests == 1,

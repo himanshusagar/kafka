@@ -16,13 +16,7 @@
  */
 package org.apache.kafka.clients.producer.internals;
 
-import org.apache.kafka.clients.ApiVersions;
-import org.apache.kafka.clients.ClientRequest;
-import org.apache.kafka.clients.ClientResponse;
-import org.apache.kafka.clients.KafkaClient;
-import org.apache.kafka.clients.Metadata;
-import org.apache.kafka.clients.NetworkClientUtils;
-import org.apache.kafka.clients.RequestCompletionHandler;
+import org.apache.kafka.clients.*;
 import org.apache.kafka.common.*;
 import org.apache.kafka.common.errors.AuthenticationException;
 import org.apache.kafka.common.errors.ClusterAuthorizationException;
@@ -67,11 +61,7 @@ public class Sender implements Runnable {
     /* new map to store connection per partition*/
     public Map<TopicPartition, KafkaClient> clientPartitions;
 
-    /* the state of each nodes connection */
-    private final KafkaClient client;
-
-    /* the state of each nodes connection for produce follower requests */
-    private final KafkaClient clientFollowerProduceRequests;
+    private final MultiNetworkClient client;
 
     /* the record accumulator that batches records */
     private final RecordAccumulator accumulator;
@@ -133,7 +123,7 @@ public class Sender implements Runnable {
                   TransactionManager transactionManager,
                   ApiVersions apiVersions) {
         this.log = logContext.logger(Sender.class);
-        this.client = client;
+        this.client = (MultiNetworkClient) client;
         this.accumulator = accumulator;
         this.metadata = metadata;
         this.guaranteeMessageOrder = guaranteeMessageOrder;
@@ -149,7 +139,6 @@ public class Sender implements Runnable {
         this.transactionManager = transactionManager;
         this.inFlightBatches = new HashMap<>();
         this.clientPartitions = new HashMap<>();
-        this.clientFollowerProduceRequests = null;
     }
 
     public Sender(LogContext logContext,
@@ -168,7 +157,7 @@ public class Sender implements Runnable {
                   TransactionManager transactionManager,
                   ApiVersions apiVersions) {
         this.log = logContext.logger(Sender.class);
-        this.client = client;
+        this.client = (MultiNetworkClient) client;
         this.accumulator = accumulator;
         this.metadata = metadata;
         this.guaranteeMessageOrder = guaranteeMessageOrder;
@@ -184,7 +173,7 @@ public class Sender implements Runnable {
         this.transactionManager = transactionManager;
         this.inFlightBatches = new HashMap<>();
         this.clientPartitions = new HashMap<>();
-        this.clientFollowerProduceRequests = clientFollowerProduceRequests;
+        //this.clientFollowerProduceRequests = clientFollowerProduceRequests;
     }
 
     public List<ProducerBatch> inFlightBatches(TopicPartition tp) {
@@ -501,11 +490,19 @@ public class Sender implements Runnable {
                 time.sleep(nextRequestHandler.retryBackoffMs());
 
             long currentTimeMs = time.milliseconds();
-            ClientRequest clientRequest = client.newClientRequest(targetNode.idString(), requestBuilder, currentTimeMs,
+            ClientRequest clientRequest = client.leaderClient.newClientRequest(targetNode.idString(), requestBuilder, currentTimeMs,
                 true, requestTimeoutMs, nextRequestHandler);
             log.debug("Sending transactional request {} to node {} with correlation ID {}", requestBuilder, targetNode, clientRequest.correlationId());
             client.send(clientRequest, currentTimeMs);
+
+            ClientRequest clientRequest2 = client.followerClient.newClientRequest(targetNode.idString(), requestBuilder, currentTimeMs,
+                    true, requestTimeoutMs, nextRequestHandler);
+            log.debug("Sending transactional request {} to node {} with correlation ID {}", requestBuilder, targetNode, clientRequest.correlationId());
+            client.send(clientRequest2, currentTimeMs);
+
+
             transactionManager.setInFlightCorrelationId(clientRequest.correlationId());
+            transactionManager.setInFlightCorrelationId(clientRequest2.correlationId());
             client.poll(retryBackoffMs, time.milliseconds());
             return true;
         } catch (IOException e) {
@@ -910,9 +907,9 @@ public class Sender implements Runnable {
 
             RequestCompletionHandler callback = response -> handleProduceResponse(response, recordsByPartition, time.milliseconds());
 
-            ClientRequest clientRequestFollower = client.newClientRequest(Integer.toString(leaderNode), requestBuilder, now, true,
+            ClientRequest clientRequestFollower = client.leaderClient.newClientRequest(Integer.toString(leaderNode), requestBuilder, now, true,
                     requestTimeoutMs, callback);
-            client.send(clientRequestFollower, now);
+            client.leaderClient.send(clientRequestFollower, now);
         }
         for (Map.Entry<Integer, ProduceFollowerRequestData.TopicProduceDataCollection> entry : followerRecords.entrySet()) {
             int followerNode = entry.getKey();
@@ -932,9 +929,9 @@ public class Sender implements Runnable {
 
             RequestCompletionHandler callback = response -> handleFollowerProduceResponse(response, recordsByPartition, time.milliseconds());
 
-            ClientRequest clientRequestFollower = clientFollowerProduceRequests.newClientRequest(Integer.toString(followerNode), requestBuilder, now, true,
+            ClientRequest clientRequestFollower = client.followerClient.newClientRequest(Integer.toString(followerNode), requestBuilder, now, true,
                     requestTimeoutMs, callback);
-            clientFollowerProduceRequests.send(clientRequestFollower, now);
+            client.followerClient.send(clientRequestFollower, now);
         }
 
     }
@@ -1031,9 +1028,11 @@ public class Sender implements Runnable {
     }
 
 
+
     /**
      * Create a produce request from the given record batches
      */
+    /*
     private void sendProduceRequest(long now, int destination, short acks, int timeout, List<ProducerBatch> batches, Cluster cluster) {
         if (batches.isEmpty())
             return;
@@ -1059,10 +1058,7 @@ public class Sender implements Runnable {
         {
 
             TopicPartition tp = batch.topicPartition;
-            /**
-                Get partition info to fetch all follower node
-                information.
-             */
+/*
             PartitionInfo partitionInfo = cluster.partition(tp);
             for (Node follower: partitionInfo.replicas()){
                 // Get leader id
@@ -1110,7 +1106,7 @@ public class Sender implements Runnable {
 
             recordsByPartition.put(tp, batch);
         }
-        /*
+
         ProduceRequest.Builder requestBuilder = ProduceRequest.forMagic(minUsedMagic,
                 new ProduceRequestData()
                         .setAcks(acks)
@@ -1124,7 +1120,7 @@ public class Sender implements Runnable {
                 requestTimeoutMs, callback);
         client.send(clientRequest, now);
         log.trace("Sent produce request to leader {}: {}", nodeId, requestBuilder);
-*/
+
         //hsagar
 
         for (Integer followerID: followers){
@@ -1172,6 +1168,7 @@ public class Sender implements Runnable {
             }
         }
     }
+    */
 
     /**
      * Wake up the selector associated with this send thread
