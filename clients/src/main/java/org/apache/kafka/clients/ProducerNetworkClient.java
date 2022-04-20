@@ -418,7 +418,7 @@ public class ProducerNetworkClient implements KafkaClient {
     public boolean isReady(Node node, long now) {
         // if we need to update our metadata now declare all requests unready to make metadata requests first
         // priority
-        log.info("checking isReady: "+node.toString());
+        //log.info("checking isReady: "+node.toString());
         return !metadataUpdater.isUpdateDue(now) && canSendRequest(node.idString(), now);
     }
 
