@@ -447,11 +447,15 @@ public final class RecordAccumulator {
                 if (batch != null) {
                     TopicPartition part = entry.getKey();
                     Node leader = cluster.leaderFor(part);
+                    PartitionInfo infoForAll = cluster.partitionsByTopicPartition.get(part);
+
                     if (leader == null) {
                         // This is a partition for which leader is not known, but messages are available to send.
                         // Note that entries are currently not removed from batches when deque is empty.
                         unknownLeaderTopics.add(part.topic());
-                    } else if (!readyNodes.contains(leader) && !isMuted(part)) {
+                    } else if (
+                            //!readyNodes.contains(leader) &&
+                            !isMuted(part)) {
                         long waitedTimeMs = batch.waitedTimeMs(nowMs);
                         boolean backingOff = batch.attempts() > 0 && waitedTimeMs < retryBackoffMs;
                         long timeToWaitMs = backingOff ? retryBackoffMs : lingerMs;
@@ -465,7 +469,12 @@ public final class RecordAccumulator {
                                 || flushInProgress()
                                 || transactionCompleting;
                         if (sendable && !backingOff) {
-                            readyNodes.add(leader);
+
+                            for (Node follower : infoForAll.replicas())
+                            {
+                                readyNodes.add(follower);
+                            }
+
                         } else {
                             long timeLeftMs = Math.max(timeToWaitMs - waitedTimeMs, 0);
                             // Note that this results in a conservative estimate since an un-sendable partition may have

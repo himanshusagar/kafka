@@ -393,7 +393,7 @@ public class Sender implements Runnable {
             }
         }
 
-        //   result.readyNodes = this.accumulator.allReplicaOrNoneNodeCheck(result.readyNodes , cluster , this.client , now);
+        result.readyNodes = this.accumulator.allReplicaOrNoneNodeCheck(result.readyNodes , cluster , this.client , now);
         // create produce requests
         Map<Integer, List<ProducerBatch>> batches = this.accumulator.drain(cluster, result.readyNodes, this.maxRequestSize, now);
         addToInflightBatches(batches);
