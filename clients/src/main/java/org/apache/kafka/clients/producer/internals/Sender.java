@@ -655,7 +655,10 @@ public class Sender implements Runnable {
                                     .collect(Collectors.toList()),
                             p.errorMessage());
                     ProducerBatch batch = batches.get(tp);
-                    completeBatch(batch, partResp, correlationId, now);
+                    //Set Batch's Response Count
+                    batch.replicationCount++;
+                    if(batch.replicationCount >= 2) //hsagar : Should be replication - 1 (excluding leader)
+                        completeBatch(batch, partResp, correlationId, now);
                 }));
                 this.sensors.recordLatency(response.destination(), response.requestLatencyMs());
             } else {
