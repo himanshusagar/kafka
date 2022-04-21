@@ -22,7 +22,7 @@ import java.nio.charset.StandardCharsets
 import java.time.Duration
 import java.util.concurrent.CountDownLatch
 import java.util.regex.Pattern
-import java.util.{Collections, Locale, Map, Optional, Properties, Random}
+import java.util.{Collections, Locale, Map, Properties, Random}
 import com.typesafe.scalalogging.LazyLogging
 import joptsimple._
 import kafka.utils.Implicits._
@@ -111,8 +111,13 @@ object ConsoleConsumer extends Logging {
       }
       messageCount += 1
       try {
-        formatter.writeTo(new ConsumerRecord(msg.topic, msg.partition, msg.offset, msg.timestamp, msg.timestampType,
-          0, 0, msg.key, msg.value, msg.headers, Optional.empty[Integer]), output)
+
+        if(true == false) {
+          logger.info(msg.topic())
+        }
+//        formatter.writeTo(new ConsumerRecord(msg.topic, msg.partition, msg.offset, msg.timestamp, msg.timestampType,
+//          0, 0, msg.key, msg.value, msg.headers, Optional.empty[Integer]), output)
+//
       } catch {
         case e: Throwable =>
           if (skipMessageOnError) {
