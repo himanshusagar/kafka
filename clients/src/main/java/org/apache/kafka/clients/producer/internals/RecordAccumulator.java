@@ -290,6 +290,7 @@ public final class RecordAccumulator {
      */
     public List<ProducerBatch> expiredBatches(long now) {
         List<ProducerBatch> expiredBatches = new ArrayList<>();
+
         for (Map.Entry<TopicPartition, Deque<ProducerBatch>> entry : this.batches.entrySet()) {
             // expire the batches in the order of sending
             Deque<ProducerBatch> deque = entry.getValue();
@@ -306,6 +307,9 @@ public final class RecordAccumulator {
                     }
                 }
             }
+        }
+        if (expiredBatches.size() > 0){
+            log.info("[akshat] batches expiring.. ");
         }
         return expiredBatches;
     }
@@ -481,6 +485,7 @@ public final class RecordAccumulator {
                             // a leader that will later be found to have sendable data. However, this is good enough
                             // since we'll just wake up and then sleep again for the remaining time.
                             nextReadyCheckDelayMs = Math.min(timeLeftMs, nextReadyCheckDelayMs);
+                            log.info("waiting for un-sendable partition" + nextReadyCheckDelayMs);
                         }
                     }
                 }
@@ -512,7 +517,9 @@ public final class RecordAccumulator {
                         //All replicas in readyNodes
                         readyAvailNodes.addAll(Arrays.asList(infoForAll.replicas()));
                     }
-                    //else
+//                    else{
+//                        log.info("[AllOrNone]Some nodes not ready.. "+counter+" vs size");
+//                    }
                     //    log.info("hsagar node avail counter" + counter + " for TopicPartition:" + part);
                 }
 

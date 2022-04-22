@@ -97,6 +97,10 @@ public final class ProducerBatch {
         return mOutNodeMap.isEmpty();
     }
 
+    public int CMapSize()
+    {
+        return mOutNodeMap.size();
+    }
 
     public ProducerBatch(TopicPartition tp, MemoryRecordsBuilder recordsBuilder, long createdMs) {
         this(tp, recordsBuilder, createdMs, false);

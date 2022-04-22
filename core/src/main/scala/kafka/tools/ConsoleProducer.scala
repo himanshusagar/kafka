@@ -298,7 +298,6 @@ object ConsoleProducer {
       Thread.sleep(sleep_timer)
       val b = new Array[Byte](1024)
       val randObj = new Random();
-
       lineNumber += 1
       randObj.nextBytes(b);
       new ProducerRecord(topic, b)

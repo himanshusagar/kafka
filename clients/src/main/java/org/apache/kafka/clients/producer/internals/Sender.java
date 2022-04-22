@@ -589,7 +589,7 @@ public class Sender implements Runnable {
             for (ProducerBatch batch : batches.values())
                 completeBatch(batch, new ProduceResponse.PartitionResponse(Errors.UNSUPPORTED_VERSION), correlationId, now);
         } else {
-            log.trace("Received produce response from node {} with correlation id {}", response.destination(), correlationId);
+            log.debug("[leader]Received produce response from node {} with correlation id {}", response.destination(), correlationId);
             // if we have a response, parse it
             if (response.hasResponse()) {
                 // Sender should exercise PartitionProduceResponse rather than ProduceResponse.PartitionResponse
@@ -642,7 +642,7 @@ public class Sender implements Runnable {
             for (ProducerBatch batch : batches.values())
                 completeBatch(batch, new ProduceResponse.PartitionResponse(Errors.UNSUPPORTED_VERSION), correlationId, now);
         } else {
-            log.trace("Received produce response from node {} with correlation id {}", response.destination(), correlationId);
+            log.debug("[follower]Received produce response from node {} with correlation id {}", response.destination(), correlationId);
             // if we have a response, parse it
             if (response.hasResponse()) {
                 // Sender should exercise PartitionProduceResponse rather than ProduceResponse.PartitionResponse
@@ -691,7 +691,7 @@ public class Sender implements Runnable {
                 (batch.magic() >= RecordBatch.MAGIC_VALUE_V2 || batch.isCompressed())) {
             // If the batch is too large, we split the batch and send the split batches again. We do not decrement
             // the retry attempts in this case.
-            log.warn(
+            log.info(
                 "Got error produce response in correlation id {} on topic-partition {}, splitting and retrying ({} attempts left). Error: {}",
                 correlationId,
                 batch.topicPartition,
@@ -704,7 +704,7 @@ public class Sender implements Runnable {
             this.sensors.recordBatchSplit();
         } else if (error != Errors.NONE) {
             if (canRetry(batch, response, now)) {
-                log.warn(
+                log.info(
                     "Got error produce response with correlation id {} on topic-partition {}, retrying ({} attempts left). Error: {}",
                     correlationId,
                     batch.topicPartition,
@@ -712,6 +712,7 @@ public class Sender implements Runnable {
                     formatErrMsg(response));
                 reenqueueBatch(batch, now);
             } else if (error == Errors.DUPLICATE_SEQUENCE_NUMBER) {
+                log.info("Duplicate ack");
                 // If we have received a duplicate sequence error, it means that the sequence number has advanced beyond
                 // the sequence of the current batch, and we haven't retained batch metadata on the broker to return
                 // the correct offset and timestamp.
@@ -764,7 +765,7 @@ public class Sender implements Runnable {
 
     private void completeBatch(ProducerBatch batch, ProduceResponse.PartitionResponse response) {
 
-        if (transactionManager != null && batch.isEmptyCMap() && batch.leaderDone) {
+        if (transactionManager != null && batch.isEmptyCMap() && response.isLeader) {
             transactionManager.handleCompletedBatch(batch, response);
         }
 
@@ -1026,6 +1027,9 @@ public class Sender implements Runnable {
                     followerRecordsByPartition.get(followerID).put(tp, batch);
                     if (!nodeMinUsedMagic.containsKey(followerID))
                         nodeMinUsedMagic.put(followerID, minUsedMagic);
+                }
+                if (batch.CMapSize() != followers.size()+1){
+                    log.info("[batch construction] CMap hashmap entries not equal to replicas list");
                 }
 
             }

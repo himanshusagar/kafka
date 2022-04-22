@@ -520,7 +520,7 @@ public class ProducerNetworkClient implements KafkaClient {
         String destination = clientRequest.destination();
         RequestHeader header = clientRequest.makeHeader(request.version());
         if (log.isDebugEnabled()) {
-            log.debug("Sending {} request with header {} and timeout {} to node {}: {}",
+            log.info("Sending {} request with header {} and timeout {} to node {}: {}",
                 clientRequest.apiKey(), header, clientRequest.requestTimeoutMs(), destination, request);
         }
         Send send = request.toSend(header);
@@ -1162,12 +1162,13 @@ public class ProducerNetworkClient implements KafkaClient {
             if (isAnyNodeConnecting()) {
                 // Strictly the timeout we should return here is "connect timeout", but as we don't
                 // have such application level configuration, using reconnect backoff instead.
+                log.info("metadata updating...");
                 return reconnectBackoffMs;
             }
 
             if (connectionStates.canConnect(nodeConnectionId, now)) {
                 // We don't have a connection to this node right now, make one
-                log.debug("Initialize connection to node {} for sending metadata request", node);
+                log.info("Initialize connection to node {} for sending metadata request", node);
                 initiateConnect(node, now);
                 return reconnectBackoffMs;
             }
