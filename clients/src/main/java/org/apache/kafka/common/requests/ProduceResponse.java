@@ -127,6 +127,7 @@ public class ProduceResponse extends AbstractResponse {
         public long logStartOffset;
         public List<RecordError> recordErrors;
         public String errorMessage;
+        public boolean isLeader;
 
         public PartitionResponse() {
             this.recordErrors = new ArrayList<>();
@@ -150,15 +151,21 @@ public class ProduceResponse extends AbstractResponse {
         }
 
         public PartitionResponse(Errors error, long baseOffset, long logAppendTime, long logStartOffset, List<RecordError> recordErrors, String errorMessage) {
+           this(error, baseOffset, logAppendTime, logStartOffset, recordErrors , errorMessage , false);
+        }
+        public PartitionResponse(Errors error, long baseOffset, long logAppendTime, long logStartOffset,
+                                 List<RecordError> recordErrors, String errorMessage, boolean isLeader)
+        {
             this.error = error;
             this.baseOffset = baseOffset;
             this.logAppendTime = logAppendTime;
             this.logStartOffset = logStartOffset;
             this.recordErrors = recordErrors;
             this.errorMessage = errorMessage;
+            this.isLeader = isLeader;
         }
 
-        @Override
+            @Override
         public boolean equals(Object o) {
             if (this == o) return true;
             if (o == null || getClass() != o.getClass()) return false;

@@ -43,6 +43,7 @@ import java.util.Deque;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Objects;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
 import java.util.function.Function;
@@ -78,7 +79,22 @@ public final class ProducerBatch {
     private long drainedMs;
     private boolean retry;
     private boolean reopened;
-    public int replicationCount;
+    private ConcurrentHashMap<Integer , Boolean> mOutNodeMap;
+
+    public void putInsideCMap(Integer nodeId , Boolean isLeader)
+    {
+        mOutNodeMap.put(nodeId , isLeader);
+    }
+
+    public void removeFromCMap(Integer nodeId)
+    {
+        mOutNodeMap.remove(nodeId);
+    }
+
+    public boolean isEmptyCMap()
+    {
+        return mOutNodeMap.isEmpty();
+    }
 
 
     public ProducerBatch(TopicPartition tp, MemoryRecordsBuilder recordsBuilder, long createdMs) {
@@ -94,10 +110,10 @@ public final class ProducerBatch {
         this.produceFuture = new ProduceRequestResult(topicPartition);
         this.retry = false;
         this.isSplitBatch = isSplitBatch;
-        this.replicationCount = 0;
         float compressionRatioEstimation = CompressionRatioEstimator.estimation(topicPartition.topic(),
                                                                                 recordsBuilder.compressionType());
         recordsBuilder.setEstimatedCompressionRatio(compressionRatioEstimation);
+        mOutNodeMap = new ConcurrentHashMap<>();
     }
 
     /**
@@ -160,7 +176,8 @@ public final class ProducerBatch {
         if (!finalState.compareAndSet(null, FinalState.ABORTED))
             throw new IllegalStateException("Batch has already been completed in final state " + finalState.get());
 
-        log.trace("Aborting batch for partition {}", topicPartition, exception);
+        log.info("Aborting batch for partition partition {} exp : {} mOutNodeMap:{}", topicPartition, exception , mOutNodeMap.size());
+        mOutNodeMap.clear();
         completeFutureAndFireCallbacks(ProduceResponse.INVALID_OFFSET, RecordBatch.NO_TIMESTAMP, index -> exception);
     }
 

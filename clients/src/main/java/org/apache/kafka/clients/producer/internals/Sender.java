@@ -183,9 +183,11 @@ public class Sender implements Runnable {
     private void maybeRemoveFromInflightBatches(ProducerBatch batch) {
         List<ProducerBatch> batches = inFlightBatches.get(batch.topicPartition);
         if (batches != null) {
-            batches.remove(batch);
-            if (batches.isEmpty()) {
-                inFlightBatches.remove(batch.topicPartition);
+            if(batch.isEmptyCMap()) {
+                batches.remove(batch);
+                if (batches.isEmpty()) {
+                    inFlightBatches.remove(batch.topicPartition);
+                }
             }
         }
     }
@@ -604,11 +606,11 @@ public class Sender implements Runnable {
                                 .stream()
                                 .map(e -> new ProduceResponse.RecordError(e.batchIndex(), e.batchIndexErrorMessage()))
                                 .collect(Collectors.toList()),
-                            p.errorMessage());
+                            p.errorMessage(),
+                            true  /* hsagar : response came for leader request */ );
                     ProducerBatch batch = batches.get(tp);
-                    batch.replicationCount++;
-                    if(batch.replicationCount >= 3) //hsagar : Should be replication - 1 (excluding leader)
-                        completeBatch(batch, partResp, correlationId, now);
+                    batch.removeFromCMap( Integer.parseInt( response.destination()) );
+                    completeBatch(batch, partResp, correlationId, now);
 
                 }));
                 this.sensors.recordLatency(response.destination(), response.requestLatencyMs());
@@ -656,12 +658,11 @@ public class Sender implements Runnable {
                                     .stream()
                                     .map(e -> new ProduceResponse.RecordError(e.batchIndex(), e.batchIndexErrorMessage()))
                                     .collect(Collectors.toList()),
-                            p.errorMessage());
+                            p.errorMessage(),
+                            false);
                     ProducerBatch batch = batches.get(tp);
-                    //Set Batch's Response Count
-                    batch.replicationCount++;
-                    if(batch.replicationCount >= 3) //hsagar : Should be replication - 1 (excluding leader)
-                        completeBatch(batch, partResp, correlationId, now);
+                    batch.removeFromCMap( Integer.parseInt( response.destination()) );
+                    completeBatch(batch, partResp, correlationId, now);
                 }));
                 this.sensors.recordLatency(response.destination(), response.requestLatencyMs());
             } else {
@@ -761,7 +762,8 @@ public class Sender implements Runnable {
     }
 
     private void completeBatch(ProducerBatch batch, ProduceResponse.PartitionResponse response) {
-        if (transactionManager != null) {
+
+        if (transactionManager != null && response.isLeader) {
             transactionManager.handleCompletedBatch(batch, response);
         }
 
@@ -991,6 +993,7 @@ public class Sender implements Runnable {
                     Map<TopicPartition, ProducerBatch> newLeaderRecordsByPartition = new HashMap<>();
                     leaderRecordsByPartition.put(leaderNode, newLeaderRecordsByPartition);
                 }
+                batch.putInsideCMap(leaderNode , true);
                 leaderRecordsByPartition.get(leaderNode).put(tp, batch);
 
                 for(Integer followerID: followers) {
@@ -1017,6 +1020,8 @@ public class Sender implements Runnable {
                         Map<TopicPartition, ProducerBatch> newFollowerRecordsByPartition = new HashMap<>();
                         followerRecordsByPartition.put(followerID, newFollowerRecordsByPartition);
                     }
+
+                    batch.putInsideCMap(followerID , false);
                     followerRecordsByPartition.get(followerID).put(tp, batch);
                     if (!nodeMinUsedMagic.containsKey(followerID))
                         nodeMinUsedMagic.put(followerID, minUsedMagic);
