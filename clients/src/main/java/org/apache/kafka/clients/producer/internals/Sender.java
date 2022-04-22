@@ -609,6 +609,7 @@ public class Sender implements Runnable {
                             p.errorMessage(),
                             true  /* hsagar : response came for leader request */ );
                     ProducerBatch batch = batches.get(tp);
+                    batch.leaderDone = true;
                     batch.removeFromCMap( Integer.parseInt( response.destination()) );
                     completeBatch(batch, partResp, correlationId, now);
 
@@ -763,7 +764,7 @@ public class Sender implements Runnable {
 
     private void completeBatch(ProducerBatch batch, ProduceResponse.PartitionResponse response) {
 
-        if (transactionManager != null && response.isLeader) {
+        if (transactionManager != null && batch.isEmptyCMap() && batch.leaderDone) {
             transactionManager.handleCompletedBatch(batch, response);
         }
 
