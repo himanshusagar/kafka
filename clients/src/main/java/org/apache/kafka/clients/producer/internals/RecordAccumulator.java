@@ -713,8 +713,8 @@ public final class RecordAccumulator {
      * Deallocate the record batch
      */
     public void deallocate(ProducerBatch batch) {
-        if(!batch.isEmptyCMap())
-            return;
+//        if(!batch.isEmptyCMap())
+//            return;
         incomplete.remove(batch);
         // Only deallocate the batch if it is not a split batch because split batch are allocated outside the
         // buffer pool.

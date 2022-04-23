@@ -183,12 +183,13 @@ public class Sender implements Runnable {
     private void maybeRemoveFromInflightBatches(ProducerBatch batch) {
         List<ProducerBatch> batches = inFlightBatches.get(batch.topicPartition);
         if (batches != null) {
-            if(batch.isEmptyCMap()) {
+//            if(batch.isEmptyCMap()) {
                 batches.remove(batch);
+                log.info(batch.topicPartition+": Remaining batches: "+batches.size());
                 if (batches.isEmpty()) {
                     inFlightBatches.remove(batch.topicPartition);
                 }
-            }
+//            }
         }
     }
 
@@ -616,6 +617,7 @@ public class Sender implements Runnable {
                 }));
                 this.sensors.recordLatency(response.destination(), response.requestLatencyMs());
             } else {
+                log.info("ack = 0 casssssss");
                 // this is the acks = 0 case, just complete all requests
                 for (ProducerBatch batch : batches.values()) {
                     completeBatch(batch, new ProduceResponse.PartitionResponse(Errors.NONE), correlationId, now);
@@ -765,7 +767,7 @@ public class Sender implements Runnable {
 
     private void completeBatch(ProducerBatch batch, ProduceResponse.PartitionResponse response) {
 
-        if (transactionManager != null && batch.isEmptyCMap() && response.isLeader) {
+        if (transactionManager != null) {
             transactionManager.handleCompletedBatch(batch, response);
         }
 

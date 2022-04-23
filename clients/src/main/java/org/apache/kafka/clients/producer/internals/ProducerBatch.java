@@ -80,7 +80,7 @@ public final class ProducerBatch {
     private boolean retry;
     private boolean reopened;
     public boolean leaderDone;
-    private ConcurrentHashMap<Integer , Boolean> mOutNodeMap;
+    private ConcurrentHashMap<Integer , Boolean> mOutNodeMap = new ConcurrentHashMap<>();
 
     public void putInsideCMap(Integer nodeId , Boolean isLeader)
     {
@@ -119,7 +119,6 @@ public final class ProducerBatch {
         float compressionRatioEstimation = CompressionRatioEstimator.estimation(topicPartition.topic(),
                                                                                 recordsBuilder.compressionType());
         recordsBuilder.setEstimatedCompressionRatio(compressionRatioEstimation);
-        mOutNodeMap = new ConcurrentHashMap<>();
     }
 
     /**
