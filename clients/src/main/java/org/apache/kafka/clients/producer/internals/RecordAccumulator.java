@@ -485,7 +485,7 @@ public final class RecordAccumulator {
                             // a leader that will later be found to have sendable data. However, this is good enough
                             // since we'll just wake up and then sleep again for the remaining time.
                             nextReadyCheckDelayMs = Math.min(timeLeftMs, nextReadyCheckDelayMs);
-                            log.info("waiting for un-sendable partition" + nextReadyCheckDelayMs);
+                            //log.info("waiting for un-sendable partition" + nextReadyCheckDelayMs);
                         }
                     }
                 }
@@ -713,8 +713,10 @@ public final class RecordAccumulator {
      * Deallocate the record batch
      */
     public void deallocate(ProducerBatch batch) {
-//        if(!batch.isEmptyCMap())
-//            return;
+        //log.info("hsagar deallocate Size" + batch.CMapSize() + " " + batch.CMapContents());
+
+        if(!batch.isEmptyCMap())
+            return;
         incomplete.remove(batch);
         // Only deallocate the batch if it is not a split batch because split batch are allocated outside the
         // buffer pool.

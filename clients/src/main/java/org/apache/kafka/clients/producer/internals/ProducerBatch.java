@@ -80,6 +80,8 @@ public final class ProducerBatch {
     private boolean retry;
     private boolean reopened;
     public boolean leaderDone;
+    ProduceResponse.PartitionResponse leaderResponse;
+
     private ConcurrentHashMap<Integer , Boolean> mOutNodeMap = new ConcurrentHashMap<>();
 
     public void putInsideCMap(Integer nodeId , Boolean isLeader)
@@ -87,9 +89,9 @@ public final class ProducerBatch {
         mOutNodeMap.put(nodeId , isLeader);
     }
 
-    public void removeFromCMap(Integer nodeId)
+    public boolean removeFromCMap(Integer nodeId)
     {
-        mOutNodeMap.remove(nodeId);
+        return mOutNodeMap.remove(nodeId) == null;
     }
 
     public boolean isEmptyCMap()
@@ -97,6 +99,10 @@ public final class ProducerBatch {
         return mOutNodeMap.isEmpty();
     }
 
+    public String CMapContents()
+    {
+        return mOutNodeMap.toString();
+    }
     public int CMapSize()
     {
         return mOutNodeMap.size();
@@ -115,7 +121,6 @@ public final class ProducerBatch {
         this.produceFuture = new ProduceRequestResult(topicPartition);
         this.retry = false;
         this.isSplitBatch = isSplitBatch;
-        this.leaderDone = false;
         float compressionRatioEstimation = CompressionRatioEstimator.estimation(topicPartition.topic(),
                                                                                 recordsBuilder.compressionType());
         recordsBuilder.setEstimatedCompressionRatio(compressionRatioEstimation);
@@ -272,11 +277,11 @@ public final class ProducerBatch {
             }
         }
         //hsagar
-        /*else {
+       else {
             // A SUCCESSFUL batch must not attempt another state change.
 
             throw new IllegalStateException("A " + this.finalState.get() + " batch must not attempt another state change to " + tryFinalState);
-        }*/
+        }
         return false;
     }
 

@@ -183,13 +183,17 @@ public class Sender implements Runnable {
     private void maybeRemoveFromInflightBatches(ProducerBatch batch) {
         List<ProducerBatch> batches = inFlightBatches.get(batch.topicPartition);
         if (batches != null) {
-//            if(batch.isEmptyCMap()) {
+            //log.info("hsagar maybeRemoveFromInflightBatches" + batch.CMapSize() + " " + batch.CMapContents());
+
+            if(batch.isEmptyCMap())
+            {
+                //log.info("hsagar maybeRemoveFromInflightBatches removing.." +  batches.isEmpty());
                 batches.remove(batch);
-                log.info(batch.topicPartition+": Remaining batches: "+batches.size());
+                //log.info(batch.topicPartition+": Remaining batches: "+batches.size());
                 if (batches.isEmpty()) {
                     inFlightBatches.remove(batch.topicPartition);
                 }
-//            }
+            }
         }
     }
 
@@ -582,13 +586,23 @@ public class Sender implements Runnable {
             log.trace("Cancelled request with header {} due to node {} being disconnected",
                 requestHeader, response.destination());
             for (ProducerBatch batch : batches.values())
+            {
+                batch.removeFromCMap( Integer.parseInt( response.destination()));
+                //log.info("hsagar batch.removeFromCMap 1 : " + response.destination() + " " + batch.CMapContents() );
+
                 completeBatch(batch, new ProduceResponse.PartitionResponse(Errors.NETWORK_EXCEPTION, String.format("Disconnected from node %s", response.destination())),
                         correlationId, now);
+            }
         } else if (response.versionMismatch() != null) {
             log.warn("Cancelled request {} due to a version mismatch with node {}",
                     response, response.destination(), response.versionMismatch());
             for (ProducerBatch batch : batches.values())
+            {
+                batch.removeFromCMap( Integer.parseInt( response.destination()) );
+                //log.info("hsagar batch.removeFromCMap 2 : " + response.destination() + " " + batch.CMapContents() );
+
                 completeBatch(batch, new ProduceResponse.PartitionResponse(Errors.UNSUPPORTED_VERSION), correlationId, now);
+            }
         } else {
             log.debug("[leader]Received produce response from node {} with correlation id {}", response.destination(), correlationId);
             // if we have a response, parse it
@@ -610,14 +624,15 @@ public class Sender implements Runnable {
                             p.errorMessage(),
                             true  /* hsagar : response came for leader request */ );
                     ProducerBatch batch = batches.get(tp);
-                    batch.leaderDone = true;
+                    batch.leaderResponse = partResp;
                     batch.removeFromCMap( Integer.parseInt( response.destination()) );
+                    //log.info("hsagar batch.removeFromCMap 3 : " + response.destination() + " " + batch.CMapContents() );
+
                     completeBatch(batch, partResp, correlationId, now);
 
                 }));
                 this.sensors.recordLatency(response.destination(), response.requestLatencyMs());
             } else {
-                log.info("ack = 0 casssssss");
                 // this is the acks = 0 case, just complete all requests
                 for (ProducerBatch batch : batches.values()) {
                     completeBatch(batch, new ProduceResponse.PartitionResponse(Errors.NONE), correlationId, now);
@@ -634,7 +649,10 @@ public class Sender implements Runnable {
         if (response.wasDisconnected()) {
             log.trace("Cancelled request with header {} due to node {} being disconnected",
                     requestHeader, response.destination());
-            for (ProducerBatch batch : batches.values()) {
+            for (ProducerBatch batch : batches.values())
+            {
+                //log.info("hsagar F batch.removeFromCMap 1 : " + response.destination() + " " + batch.CMapContents() );
+
                 completeBatch(batch, new ProduceResponse.PartitionResponse(Errors.NETWORK_EXCEPTION, String.format("Disconnected from node %s", response.destination())),
                         correlationId, now);
             }
@@ -642,7 +660,11 @@ public class Sender implements Runnable {
             log.warn("Cancelled request {} due to a version mismatch with node {}",
                     response, response.destination(), response.versionMismatch());
             for (ProducerBatch batch : batches.values())
+            {
+                //log.info("hsagar F batch.removeFromCMap 2 : " + response.destination() + " " + batch.CMapContents() );
+
                 completeBatch(batch, new ProduceResponse.PartitionResponse(Errors.UNSUPPORTED_VERSION), correlationId, now);
+            }
         } else {
             log.debug("[follower]Received produce response from node {} with correlation id {}", response.destination(), correlationId);
             // if we have a response, parse it
@@ -665,6 +687,8 @@ public class Sender implements Runnable {
                             false);
                     ProducerBatch batch = batches.get(tp);
                     batch.removeFromCMap( Integer.parseInt( response.destination()) );
+
+                    //log.info("hsagar F batch.removeFromCMap 3 : " + response.destination() + " " + batch.CMapContents() );
                     completeBatch(batch, partResp, correlationId, now);
                 }));
                 this.sensors.recordLatency(response.destination(), response.requestLatencyMs());
@@ -767,12 +791,18 @@ public class Sender implements Runnable {
 
     private void completeBatch(ProducerBatch batch, ProduceResponse.PartitionResponse response) {
 
-        if (transactionManager != null) {
-            transactionManager.handleCompletedBatch(batch, response);
-        }
+        //log.info("hsagar  completeBatch Size:" + batch.CMapSize() + " -> " + batch.CMapContents() + " " + (transactionManager != null) + " " + batch.leaderDone + " " + batch.isEmptyCMap());
 
-        if (batch.complete(response.baseOffset, response.logAppendTime)) {
-            maybeRemoveAndDeallocateBatch(batch);
+        if (batch.isEmptyCMap())
+        {
+            if (transactionManager != null) {
+
+                transactionManager.handleCompletedBatch(batch, batch.leaderResponse);
+            }
+
+            if (batch.complete(batch.leaderResponse.baseOffset, batch.leaderResponse.logAppendTime)) {
+                maybeRemoveAndDeallocateBatch(batch);
+            }
         }
     }
 
@@ -1030,6 +1060,9 @@ public class Sender implements Runnable {
                     if (!nodeMinUsedMagic.containsKey(followerID))
                         nodeMinUsedMagic.put(followerID, minUsedMagic);
                 }
+
+                //log.info("hsagar fillRecords : leader" + leaderNode + " followers: " + followers + " " + batch.CMapContents() );
+
                 if (batch.CMapSize() != followers.size()+1){
                     log.info("[batch construction] CMap hashmap entries not equal to replicas list");
                 }
