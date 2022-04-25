@@ -438,6 +438,7 @@ public class Sender implements Runnable {
             // otherwise the select time will be the time difference between now and the metadata expiry time;
             pollTimeout = 0;
         }
+        log.info("ReadyNodes: "+result.readyNodes);
         sendProduceRequests(batches, now);
         return pollTimeout;
     }
