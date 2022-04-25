@@ -86,7 +86,7 @@ public class MultiNetworkClient implements KafkaClient
 
     @Override
     public int inFlightRequestCount() {
-        return leaderClient.inFlightRequestCount() + followerClient.inFlightRequestCount();
+        return Math.max(leaderClient.inFlightRequestCount(), followerClient.inFlightRequestCount());
     }
 
     @Override
@@ -96,7 +96,7 @@ public class MultiNetworkClient implements KafkaClient
 
     @Override
     public int inFlightRequestCount(String nodeId) {
-        return leaderClient.inFlightRequestCount(nodeId) + followerClient.inFlightRequestCount(nodeId);
+        return Math.max(leaderClient.inFlightRequestCount(nodeId), followerClient.inFlightRequestCount(nodeId));
     }
 
     @Override
