@@ -925,6 +925,7 @@ public class Sender implements Runnable {
                              Map <Integer, Map<TopicPartition, ProducerBatch>> followerRecordsByPartition,
                              long now, int timeout)
     {
+        log.info("New send");
         for (Map.Entry<Integer, ProduceRequestData.TopicProduceDataCollection> entry : leaderRecords.entrySet()) {
             int leaderNode = entry.getKey();
             ProduceRequestData.TopicProduceDataCollection tpd = leaderRecords.get(leaderNode);
