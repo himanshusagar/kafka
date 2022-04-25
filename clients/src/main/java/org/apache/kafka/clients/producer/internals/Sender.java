@@ -946,6 +946,7 @@ public class Sender implements Runnable {
             ClientRequest clientRequestFollower = client.leaderClient.newClientRequest(Integer.toString(leaderNode), requestBuilder, now, true,
                     requestTimeoutMs, callback);
             client.leaderClient.send(clientRequestFollower, now);
+            log.info("[Leader] Sending: "+leaderNode);
         }
         for (Map.Entry<Integer, ProduceFollowerRequestData.TopicProduceDataCollection> entry : followerRecords.entrySet()) {
             int followerNode = entry.getKey();
@@ -968,6 +969,7 @@ public class Sender implements Runnable {
             ClientRequest clientRequestFollower = client.followerClient.newClientRequest(Integer.toString(followerNode), requestBuilder, now, true,
                     requestTimeoutMs, callback);
             client.followerClient.send(clientRequestFollower, now);
+            log.info("[Follower] Sending: "+followerNode);
         }
 
     }
