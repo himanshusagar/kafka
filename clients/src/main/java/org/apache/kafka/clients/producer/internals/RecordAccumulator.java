@@ -508,14 +508,15 @@ public final class RecordAccumulator {
                     PartitionInfo infoForAll = cluster.partitionsByTopicPartition.get(part);
                     int counter = 0;
                     int size = infoForAll.replicas().length;
+                    Node leader = cluster.leaderFor(part);
 
                     for (Node replica : infoForAll.replicas())
-                        if(readyNodes.contains(replica) && client.isReady(replica , now) )
+                        if( client.isReady(replica , now) )
                             counter++;
                     if(counter == size)
                     {
                         //All replicas in readyNodes
-                        readyAvailNodes.addAll(Arrays.asList(infoForAll.replicas()));
+                        readyAvailNodes.add(leader);
                     }
 //                    else{
 //                        log.info("[AllOrNone]Some nodes not ready.. "+counter+" vs size");
