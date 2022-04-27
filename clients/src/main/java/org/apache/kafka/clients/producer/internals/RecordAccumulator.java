@@ -582,7 +582,7 @@ public final class RecordAccumulator {
         return false;
     }
 
-    private List<ProducerBatch> drainBatchesForOneNode(Cluster cluster, Node node, int maxSize, long now) {
+    private List<ProducerBatch> drainBatchesForOneNode(Cluster cluster, Node node, int maxSize, long now, Set<Node> readyAllNodes) {
         int size = 0;
         List<PartitionInfo> parts = cluster.partitionsForNode(node.id());
 
@@ -592,8 +592,36 @@ public final class RecordAccumulator {
         /* to make starvation less likely this loop doesn't start at 0 */
         int start = drainIndex = drainIndex % parts.size();
         do {
+
+
             PartitionInfo part = parts.get(drainIndex);
             TopicPartition tp = new TopicPartition(part.topic(), part.partition());
+
+            PartitionInfo infoForAll = cluster.partitionsByTopicPartition.get(tp);
+            {
+                int counter = 0;
+                int size_len = infoForAll.replicas().length;
+                for (Node replica : infoForAll.replicas())
+                    if (readyAllNodes.contains(replica))
+                        counter++;
+                if (counter < size_len)
+                {
+                    this.drainIndex = (this.drainIndex + 1) % parts.size();
+                    //Moving to next partition
+
+//                    log.info("hsagar drainBatchesForOneNode SKIP drainIndex" + this.drainIndex + " " + readyAllNodes + " TP : "  +
+//                            tp + " info " + infoForAll);
+
+                    if(start == drainIndex) // looping back.
+                        break;
+                    else
+                        continue; // Go to Top ; We've already increased index.
+                }
+//                else
+//                    log.info("hsagar drainBatchesForOneNode CONTD drainIndex" + this.drainIndex + " " + readyAllNodes + " TP : "  +
+//                            tp + " info " + infoForAll);
+            }
+
             this.drainIndex = (this.drainIndex + 1) % parts.size();
 
             // Only proceed if the partition has no in-flight batches.
@@ -662,6 +690,10 @@ public final class RecordAccumulator {
         return ready;
     }
 
+    public Map<Integer, List<ProducerBatch>> drain(Cluster cluster, Set<Node> nodes, int maxSize, long now)
+    {
+        return drain(cluster , nodes , maxSize , now , nodes);
+    }
     /**
      * Drain all the data for the given nodes and collate them into a list of batches that will fit within the specified
      * size on a per-node basis. This method attempts to avoid choosing the same topic-node over and over.
@@ -672,13 +704,13 @@ public final class RecordAccumulator {
      * @param now The current unix time in milliseconds
      * @return A list of {@link ProducerBatch} for each node specified with total size less than the requested maxSize.
      */
-    public Map<Integer, List<ProducerBatch>> drain(Cluster cluster, Set<Node> nodes, int maxSize, long now) {
+    public Map<Integer, List<ProducerBatch>> drain(Cluster cluster, Set<Node> nodes, int maxSize, long now, Set<Node> readAllNodes) {
         if (nodes.isEmpty())
             return Collections.emptyMap();
 
         Map<Integer, List<ProducerBatch>> batches = new HashMap<>();
         for (Node node : nodes) {
-            List<ProducerBatch> ready = drainBatchesForOneNode(cluster, node, maxSize, now);
+            List<ProducerBatch> ready = drainBatchesForOneNode(cluster, node, maxSize, now, readAllNodes );
             batches.put(node.id(), ready);
         }
         return batches;

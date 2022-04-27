@@ -41,13 +41,7 @@ import org.apache.kafka.common.utils.Time;
 import org.slf4j.Logger;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
@@ -389,9 +383,10 @@ public class Sender implements Runnable {
             }
         }
 
+        Set<Node> readyAllNodes = result.readyNodes;
         result.readyNodes = this.accumulator.allReplicaOrNoneNodeCheck(result.readyNodes , cluster , this.client , now);
         // create produce requests
-        Map<Integer, List<ProducerBatch>> batches = this.accumulator.drain(cluster, result.readyNodes, this.maxRequestSize, now);
+        Map<Integer, List<ProducerBatch>> batches = this.accumulator.drain(cluster, result.readyNodes, this.maxRequestSize, now , readyAllNodes);
         addToInflightBatches(batches);
         if (guaranteeMessageOrder) {
             // Mute all the partitions drained
@@ -438,7 +433,7 @@ public class Sender implements Runnable {
             // otherwise the select time will be the time difference between now and the metadata expiry time;
             pollTimeout = 0;
         }
-        log.info("ReadyNodes: "+result.readyNodes);
+        //log.info("akshat ReadyNodes: "+result.readyNodes);
         sendProduceRequests(batches, now);
         return pollTimeout;
     }
@@ -926,8 +921,8 @@ public class Sender implements Runnable {
                              Map <Integer, Map<TopicPartition, ProducerBatch>> followerRecordsByPartition,
                              long now, int timeout)
     {
-        log.info("New send, leaderNodes: "+ leaderRecords.keySet() +
-                "followerNodes: "+ followerRecords.keySet());
+//        log.info( " akshat New send, leaderNodes: "+ leaderRecords.keySet() +
+//                "followerNodes: "+ followerRecords.keySet());
         for (Map.Entry<Integer, ProduceRequestData.TopicProduceDataCollection> entry : leaderRecords.entrySet()) {
             int leaderNode = entry.getKey();
             ProduceRequestData.TopicProduceDataCollection tpd = leaderRecords.get(leaderNode);
@@ -949,7 +944,7 @@ public class Sender implements Runnable {
             ClientRequest clientRequestFollower = client.leaderClient.newClientRequest(Integer.toString(leaderNode), requestBuilder, now, true,
                     requestTimeoutMs, callback);
             client.leaderClient.send(clientRequestFollower, now);
-            log.info("[Leader] Sending: "+leaderNode);
+            //log.info(" akshat [Leader] Sending: "+leaderNode);
         }
         for (Map.Entry<Integer, ProduceFollowerRequestData.TopicProduceDataCollection> entry : followerRecords.entrySet()) {
             int followerNode = entry.getKey();
@@ -972,7 +967,7 @@ public class Sender implements Runnable {
             ClientRequest clientRequestFollower = client.followerClient.newClientRequest(Integer.toString(followerNode), requestBuilder, now, true,
                     requestTimeoutMs, callback);
             client.followerClient.send(clientRequestFollower, now);
-            log.info("[Follower] Sending: "+followerNode);
+            //log.info("akshat [Follower] Sending: "+followerNode);
         }
 
     }

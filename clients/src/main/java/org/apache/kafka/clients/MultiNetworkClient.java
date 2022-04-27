@@ -81,6 +81,7 @@ public class MultiNetworkClient implements KafkaClient
 
     @Override
     public Node leastLoadedNode(long now) {
+        // hsagar? Implication of picking from only this?
         return leaderClient.leastLoadedNode(now);
     }
 
