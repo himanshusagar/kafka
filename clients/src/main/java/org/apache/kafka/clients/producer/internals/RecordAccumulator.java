@@ -511,7 +511,7 @@ public final class RecordAccumulator {
                     Node leader = cluster.leaderFor(part);
 
                     for (Node replica : infoForAll.replicas())
-                        if( client.isReady(replica , now) )
+                        if( readyNodes.contains(replica) && client.isReady(replica , now) )
                             counter++;
                     if(counter == size)
                     {
