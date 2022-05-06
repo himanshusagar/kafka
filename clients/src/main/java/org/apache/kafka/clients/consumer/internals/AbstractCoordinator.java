@@ -254,7 +254,7 @@ public abstract class AbstractCoordinator implements Closeable {
 
             if (future.failed()) {
                 if (future.isRetriable()) {
-                    log.info("Coordinator discovery failed, refreshing metadata", future.exception());
+                    log.debug("Coordinator discovery failed, refreshing metadata", future.exception());
                     client.awaitMetadataUpdate(timer);
                 } else {
                     fatalException = future.exception();
@@ -280,7 +280,7 @@ public abstract class AbstractCoordinator implements Closeable {
             // find a node to ask about the coordinator
             Node node = this.client.leastLoadedNode();
             if (node == null) {
-                log.info("No broker available to send FindCoordinator request");
+                log.debug("No broker available to send FindCoordinator request");
                 return RequestFuture.noBrokersAvailable();
             } else {
                 findCoordinatorFuture = sendFindCoordinatorRequest(node);
@@ -544,7 +544,7 @@ public abstract class AbstractCoordinator implements Closeable {
                         .setRebalanceTimeoutMs(this.rebalanceConfig.rebalanceTimeoutMs)
         );
 
-        log.info("Sending JoinGroup ({}) to coordinator {}", requestBuilder, this.coordinator);
+        log.debug("Sending JoinGroup ({}) to coordinator {}", requestBuilder, this.coordinator);
 
         // Note that we override the request timeout using the rebalance timeout since that is the
         // maximum time that it may block on the coordinator. We add an extra 5 seconds for small delays.
@@ -568,7 +568,7 @@ public abstract class AbstractCoordinator implements Closeable {
             Errors error = joinResponse.error();
             if (error == Errors.NONE) {
                 if (isProtocolTypeInconsistent(joinResponse.data().protocolType())) {
-                    log.info("JoinGroup failed: Inconsistent Protocol Type, received {} but expected {}",
+                    log.error("JoinGroup failed: Inconsistent Protocol Type, received {} but expected {}",
                         joinResponse.data().protocolType(), protocolType());
                     future.raise(Errors.INCONSISTENT_GROUP_PROTOCOL);
                 } else {
@@ -835,7 +835,7 @@ public abstract class AbstractCoordinator implements Closeable {
 
             List<Coordinator> coordinators = ((FindCoordinatorResponse) resp.responseBody()).coordinators();
             if (coordinators.size() != 1) {
-                log.info("Group coordinator lookup failed: Invalid response containing more than a single coordinator");
+                log.error("Group coordinator lookup failed: Invalid response containing more than a single coordinator");
                 future.raise(new IllegalStateException("Group coordinator lookup failed: Invalid response containing more than a single coordinator"));
             }
             Coordinator coordinatorData = coordinators.get(0);
@@ -858,7 +858,7 @@ public abstract class AbstractCoordinator implements Closeable {
             } else if (error == Errors.GROUP_AUTHORIZATION_FAILED) {
                 future.raise(GroupAuthorizationException.forGroupId(rebalanceConfig.groupId));
             } else {
-                log.info("Group coordinator lookup failed: {}", coordinatorData.errorMessage());
+                log.debug("Group coordinator lookup failed: {}", coordinatorData.errorMessage());
                 future.raise(error);
             }
         }
@@ -934,7 +934,7 @@ public abstract class AbstractCoordinator implements Closeable {
         } else {
             long durationOfOngoingDisconnect = time.milliseconds() - lastTimeOfConnectionMs;
             if (durationOfOngoingDisconnect > rebalanceConfig.rebalanceTimeoutMs)
-                log.info("Consumer has been disconnected from the group coordinator for {}ms", durationOfOngoingDisconnect);
+                log.warn("Consumer has been disconnected from the group coordinator for {}ms", durationOfOngoingDisconnect);
         }
     }
 
@@ -1034,7 +1034,7 @@ public abstract class AbstractCoordinator implements Closeable {
                 // If coordinator is not known, requests are aborted.
                 Node coordinator = checkAndGetCoordinator();
                 if (coordinator != null && !client.awaitPendingRequests(coordinator, timer))
-                    log.info("Close timed out with {} pending requests to coordinator, terminating client connections",
+                    log.warn("Close timed out with {} pending requests to coordinator, terminating client connections",
                             client.pendingRequestCount(coordinator));
             }
         }
@@ -1092,7 +1092,7 @@ public abstract class AbstractCoordinator implements Closeable {
 
             final Errors error = leaveResponse.error();
             if (error == Errors.NONE) {
-                log.info("LeaveGroup response with {} returned successfully: {}", sentGeneration, response);
+                log.debug("LeaveGroup response with {} returned successfully: {}", sentGeneration, response);
                 future.complete(null);
             } else {
                 log.error("LeaveGroup request with {} failed with error: {}", sentGeneration, error.message());
@@ -1103,7 +1103,7 @@ public abstract class AbstractCoordinator implements Closeable {
 
     // visible for testing
     synchronized RequestFuture<Void> sendHeartbeatRequest() {
-        log.info("Sending Heartbeat request with generation {} and member id {} to coordinator {}",
+        log.debug("Sending Heartbeat request with generation {} and member id {} to coordinator {}",
             generation.generationId, generation.memberId, coordinator);
         HeartbeatRequest.Builder requestBuilder =
                 new HeartbeatRequest.Builder(new HeartbeatRequestData()
@@ -1142,7 +1142,7 @@ public abstract class AbstractCoordinator implements Closeable {
                         requestRejoin("group is already rebalancing");
                         future.raise(error);
                     } else {
-                        log.info("Ignoring heartbeat response with error {} during {} state", error, state);
+                        log.debug("Ignoring heartbeat response with error {} during {} state", error, state);
                         future.complete(null);
                     }
                 }
@@ -1405,7 +1405,7 @@ public abstract class AbstractCoordinator implements Closeable {
                         } else if (heartbeat.pollTimeoutExpired(now)) {
                             // the poll timeout has expired, which means that the foreground thread has stalled
                             // in between calls to poll().
-                            log.info("consumer poll timeout has expired. This means the time between subsequent calls to poll() " +
+                            log.warn("consumer poll timeout has expired. This means the time between subsequent calls to poll() " +
                                 "was longer than the configured max.poll.interval.ms, which typically implies that " +
                                 "the poll loop is spending too much time processing messages. You can address this " +
                                 "either by increasing max.poll.interval.ms or by reducing the maximum size of batches " +
