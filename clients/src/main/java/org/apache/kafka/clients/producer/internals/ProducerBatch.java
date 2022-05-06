@@ -98,12 +98,11 @@ public final class ProducerBatch {
 
     public boolean isSuperMajorityAchieved()
     {
-        //Need 3n/4 + 1 folks completed
-        // this means n - (3n/4 + 1) incomplete is fine.
-        // => n/4 - 1 incomplete is fine.
+        //Can have 2F + 1 - (F + F/2 + 1) out standing nodes.
+        // => F/2 nodes
+        // => (N-1)/4 nodes
         int curSize = mOutNodeMap.size();
-        return  isLeaderDone && curSize <= (N / 4.0);
-        //return mOutNodeMap.isEmpty();
+        return  isLeaderDone && curSize <= ( (N - 1) / 4.0);
     }
 
     public String CMapContents()
