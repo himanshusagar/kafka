@@ -79,7 +79,8 @@ public final class ProducerBatch {
     private long drainedMs;
     private boolean retry;
     private boolean reopened;
-    public boolean leaderDone;
+    public boolean isLeaderDone;
+    private int N;
     ProduceResponse.PartitionResponse leaderResponse;
 
     private ConcurrentHashMap<Integer , Boolean> mOutNodeMap = new ConcurrentHashMap<>();
@@ -87,6 +88,7 @@ public final class ProducerBatch {
     public void putInsideCMap(Integer nodeId , Boolean isLeader)
     {
         mOutNodeMap.put(nodeId , isLeader);
+        N = Math.max(mOutNodeMap.size() , N);
     }
 
     public boolean removeFromCMap(Integer nodeId)
@@ -94,9 +96,14 @@ public final class ProducerBatch {
         return mOutNodeMap.remove(nodeId) == null;
     }
 
-    public boolean isEmptyCMap()
+    public boolean isSuperMajorityAchieved()
     {
-        return mOutNodeMap.isEmpty();
+        //Need 3n/4 + 1 folks completed
+        // this means n - (3n/4 + 1) incomplete is fine.
+        // => n/4 - 1 incomplete is fine.
+        int curSize = mOutNodeMap.size();
+        return  isLeaderDone && curSize <= (N / 4.0);
+        //return mOutNodeMap.isEmpty();
     }
 
     public String CMapContents()
@@ -121,6 +128,8 @@ public final class ProducerBatch {
         this.produceFuture = new ProduceRequestResult(topicPartition);
         this.retry = false;
         this.isSplitBatch = isSplitBatch;
+        this.N = 0;
+        this.isLeaderDone = false;
         float compressionRatioEstimation = CompressionRatioEstimator.estimation(topicPartition.topic(),
                                                                                 recordsBuilder.compressionType());
         recordsBuilder.setEstimatedCompressionRatio(compressionRatioEstimation);

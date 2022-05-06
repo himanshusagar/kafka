@@ -179,7 +179,7 @@ public class Sender implements Runnable {
         if (batches != null) {
             //log.info("hsagar maybeRemoveFromInflightBatches" + batch.CMapSize() + " " + batch.CMapContents());
 
-            if(batch.isEmptyCMap())
+            if(batch.isSuperMajorityAchieved())
             {
                 //log.info("hsagar maybeRemoveFromInflightBatches removing.." +  batches.isEmpty());
                 batches.remove(batch);
@@ -621,6 +621,7 @@ public class Sender implements Runnable {
                             true  /* hsagar : response came for leader request */ );
                     ProducerBatch batch = batches.get(tp);
                     batch.leaderResponse = partResp;
+                    batch.isLeaderDone = true;
                     batch.removeFromCMap( Integer.parseInt( response.destination()) );
                     //log.info("hsagar batch.removeFromCMap 3 : " + response.destination() + " " + batch.CMapContents() );
 
@@ -789,7 +790,7 @@ public class Sender implements Runnable {
 
         //log.info("hsagar  completeBatch Size:" + batch.CMapSize() + " -> " + batch.CMapContents() + " " + (transactionManager != null) + " " + batch.leaderDone + " " + batch.isEmptyCMap());
 
-        if (batch.isEmptyCMap())
+        if (batch.isSuperMajorityAchieved())
         {
             if (transactionManager != null) {
 

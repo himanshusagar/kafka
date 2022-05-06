@@ -748,7 +748,7 @@ public final class RecordAccumulator {
     public void deallocate(ProducerBatch batch) {
         //log.info("hsagar deallocate Size" + batch.CMapSize() + " " + batch.CMapContents());
 
-        if(!batch.isEmptyCMap())
+        if(!batch.isSuperMajorityAchieved())
             return;
         incomplete.remove(batch);
         // Only deallocate the batch if it is not a split batch because split batch are allocated outside the
