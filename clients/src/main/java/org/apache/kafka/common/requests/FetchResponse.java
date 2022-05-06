@@ -204,12 +204,13 @@ public class FetchResponse extends AbstractResponse {
 
 
     //hsagar
-    public static List<MemoryRecords> recordsOrFailUsingOrder(ConcurrentHashMap<MessageID, MemoryRecords> memRecords ,
+    public static Tuple<List<MemoryRecords>, Boolean> recordsOrFailUsingOrder(ConcurrentHashMap<MessageID, MemoryRecords> memRecords ,
                                                               List<FetchResponseData.FollowerSyncData> msgOrders,
                                                               long highWaterMark)
     {
         boolean end = false;
         List<MemoryRecords> recordsList = new ArrayList<>();
+        Tuple<List<MemoryRecords>, Boolean> data = new Tuple<>(recordsList, false);
         for(FetchResponseData.FollowerSyncData syncData : msgOrders)
         {
             MessageID newKey = new MessageID( syncData.producerID() , syncData.producerEpoch() ,
@@ -219,7 +220,8 @@ public class FetchResponse extends AbstractResponse {
             if(memRecords.containsKey(newKey) && end){
                 // If a hole is found, append till last message
                 log.info("[akshat][follower] HOLE at Begin: "+ syncData.sequenceBegin() +"End: "+ syncData.sequenceEnd());
-                return recordsList;
+                data.b = true;
+                return data;
             }
 
             if(memRecords.containsKey(newKey))
@@ -234,7 +236,7 @@ public class FetchResponse extends AbstractResponse {
                 end = true;
             }
         }
-        return recordsList;
+        return data;
 
         /*
         if (partition.records() == null) return MemoryRecords.EMPTY;

@@ -62,6 +62,7 @@ class ReplicaFetcherThread(name: String,
                                 replicaMgr.brokerTopicStats) {
 
   private val replicaId = brokerConfig.brokerId
+  private var fullFetch = false
   private val logContext = new LogContext(s"[ReplicaFetcher replicaId=$replicaId, leaderId=${sourceBroker.id}, " +
     s"fetcherId=$fetcherId] ")
   this.logIdent = logContext.logPrefix
@@ -171,6 +172,10 @@ class ReplicaFetcherThread(name: String,
                                             fetchOffset: Long,
                                             partitionData: FetchData): Option[LogAppendInfo] = {
     val logTrace = false
+    if (this.fullFetch &&  !topicPartition.isInternal()){
+      info("[Akshat]Filling hole using full fetch: "+topicPartition+" fetchOffset: "+fetchOffset)
+    }
+    this.fullFetch = false
     val partition = replicaMgr.getPartitionOrException(topicPartition)
     val log = partition.localLogOrException
     val records = toMemoryRecords(FetchResponse.recordsOrFail(partitionData))
@@ -222,22 +227,26 @@ class ReplicaFetcherThread(name: String,
     var fetchOffsets = fetchOffset
     //follower already batch
     //OrderedMessageMapSingleton.hMap.printf();
+    var logAppendInfo:Option[LogAppendInfo] = None
+
+    // If internal topic or full fetch is true; use memory records to append to follower log
+    if (topicPartition.isInternal() || this.fullFetch){
+      logAppendInfo = processInternalPartitionData(topicPartition, fetchOffset, partitionData)
+      return logAppendInfo
+    }
 
     val hMapForTP = OrderedMessageMapSingleton.hMap.get(topicPartition);
     // got it from leader
     val msgOrders = partitionData.messageOrders;
-    val recordsList = FetchResponse.recordsOrFailUsingOrder(hMapForTP , msgOrders , partitionData.highWatermark());
+    val data = FetchResponse.recordsOrFailUsingOrder(hMapForTP , msgOrders , partitionData.highWatermark());
+    val recordsList = data.a
+    this.fullFetch = data.b
     OrderedMessageMapSingleton.hMap.put(topicPartition , hMapForTP);
 
-    var logAppendInfo:Option[LogAppendInfo] = None
     //var firstAppendInfo:Option[LogAppendInfo] = None
     var mergedAppendInfo:LogAppendInfo = UnknownLogAppendInfo
 
-    // If internal topic; use memory records to append to follower log
-    if (topicPartition.isInternal()){
-      logAppendInfo = processInternalPartitionData(topicPartition, fetchOffset, partitionData)
-      return logAppendInfo
-    }
+
 
 //    if (recordsList.size() == 0)
 //    {
@@ -418,7 +427,7 @@ class ReplicaFetcherThread(name: String,
     } else {
       val version: Short = if (fetchRequestVersion >= 13 && !fetchData.canUseTopicIds) 12 else fetchRequestVersion
       val requestBuilder = FetchRequest.Builder
-        .forReplicaOrderOnly(version, replicaId, maxWait, minBytes, fetchData.toSend, fetchData.topicIds)
+        .forReplicaOrderOnly(version, replicaId, maxWait, minBytes, fetchData.toSend, fetchData.topicIds, !this.fullFetch)
         .setMaxBytes(maxBytes)
         .toForget(fetchData.toForget)
         .metadata(fetchData.metadata)
