@@ -18,6 +18,7 @@ package org.apache.kafka.clients.producer.internals;
 
 import org.apache.kafka.clients.producer.Callback;
 import org.apache.kafka.clients.producer.RecordMetadata;
+import org.apache.kafka.common.Node;
 import org.apache.kafka.common.TopicPartition;
 import org.apache.kafka.common.errors.RecordBatchTooLargeException;
 import org.apache.kafka.common.header.Header;
@@ -37,12 +38,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.nio.ByteBuffer;
-import java.util.ArrayDeque;
-import java.util.ArrayList;
-import java.util.Deque;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.concurrent.atomic.AtomicReference;
@@ -80,29 +76,36 @@ public final class ProducerBatch {
     private boolean retry;
     private boolean reopened;
     public boolean isLeaderDone;
-    private int N;
+    private int mAcked;
+    private int mMinSuperMajority;
+
     ProduceResponse.PartitionResponse leaderResponse;
 
     private ConcurrentHashMap<Integer , Boolean> mOutNodeMap = new ConcurrentHashMap<>();
+    public HashSet<Node> mSuperMajorityNodes = new HashSet<>();
 
     public void putInsideCMap(Integer nodeId , Boolean isLeader)
     {
         mOutNodeMap.put(nodeId , isLeader);
-        N = Math.max(mOutNodeMap.size() , N);
+    }
+
+    public void setMinSuperMajorityCount(int n)
+    {
+        this.mMinSuperMajority = (int) Math.ceil(0.75 * (n - 1) + 1);;
     }
 
     public boolean removeFromCMap(Integer nodeId)
     {
+        mAcked++;
         return mOutNodeMap.remove(nodeId) == null;
     }
 
-    public boolean isSuperMajorityAchieved()
+    public boolean isSuperMajorityAcked()
     {
         //Can have 2F + 1 - (F + F/2 + 1) out standing nodes.
         // => F/2 nodes
         // => (N-1)/4 nodes
-        int curSize = mOutNodeMap.size();
-        return  isLeaderDone && curSize <= ( (N - 1) / 4.0);
+        return  isLeaderDone && mAcked >= mMinSuperMajority;
     }
 
     public String CMapContents()
@@ -127,7 +130,8 @@ public final class ProducerBatch {
         this.produceFuture = new ProduceRequestResult(topicPartition);
         this.retry = false;
         this.isSplitBatch = isSplitBatch;
-        this.N = 0;
+        this.mAcked = 0;
+        this.mMinSuperMajority = 0;
         this.isLeaderDone = false;
         float compressionRatioEstimation = CompressionRatioEstimator.estimation(topicPartition.topic(),
                                                                                 recordsBuilder.compressionType());

@@ -179,7 +179,7 @@ public class Sender implements Runnable {
         if (batches != null) {
             //log.info("hsagar maybeRemoveFromInflightBatches" + batch.CMapSize() + " " + batch.CMapContents());
 
-            if(batch.isSuperMajorityAchieved())
+            if(batch.isSuperMajorityAcked())
             {
                 //log.info("hsagar maybeRemoveFromInflightBatches removing.." +  batches.isEmpty());
                 batches.remove(batch);
@@ -384,7 +384,7 @@ public class Sender implements Runnable {
         }
 
         Set<Node> readyAllNodes = result.readyNodes;
-        result.readyNodes = this.accumulator.allReplicaOrNoneNodeCheck(result.readyNodes , cluster , this.client , now);
+        result.readyNodes = this.accumulator.allOrNoneReplicaNodeCheck(result.readyNodes , cluster , this.client , now);
         // create produce requests
         Map<Integer, List<ProducerBatch>> batches = this.accumulator.drain(cluster, result.readyNodes, this.maxRequestSize, now , readyAllNodes);
         addToInflightBatches(batches);
@@ -790,7 +790,7 @@ public class Sender implements Runnable {
 
         //log.info("hsagar  completeBatch Size:" + batch.CMapSize() + " -> " + batch.CMapContents() + " " + (transactionManager != null) + " " + batch.leaderDone + " " + batch.isEmptyCMap());
 
-        if (batch.isSuperMajorityAchieved())
+        if (batch.isSuperMajorityAcked())
         {
             if (transactionManager != null) {
 
@@ -1002,7 +1002,7 @@ public class Sender implements Runnable {
 
                 // Get partition info to fetch all follower node information.
                 PartitionInfo partitionInfo = cluster.partition(tp);
-                for (Node follower: partitionInfo.replicas()){
+                for (Node follower: batch.mSuperMajorityNodes){
                     // Skip leader
                     if (partitionInfo.leader() == follower){
                         continue;

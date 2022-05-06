@@ -493,7 +493,8 @@ public final class RecordAccumulator {
         }
         return new ReadyCheckResult(readyNodes, nextReadyCheckDelayMs, unknownLeaderTopics);
     }
-    public Set<Node> allReplicaOrNoneNodeCheck(Set<Node> readyNodes, Cluster cluster, KafkaClient client , long now)
+
+    public Set<Node> allOrNoneReplicaNodeCheck(Set<Node> readyNodes, Cluster cluster, KafkaClient client , long now)
     {
         Set<Node> readyAvailNodes = new HashSet<>();
         for (Map.Entry<TopicPartition, Deque<ProducerBatch>> entry : this.batches.entrySet())
@@ -507,13 +508,21 @@ public final class RecordAccumulator {
                     TopicPartition part = entry.getKey();
                     PartitionInfo infoForAll = cluster.partitionsByTopicPartition.get(part);
                     int counter = 0;
-                    int size = infoForAll.replicas().length;
+                    int N = infoForAll.replicas().length;
                     Node leader = cluster.leaderFor(part);
+                    boolean isLeaderDone = false;
 
                     for (Node replica : infoForAll.replicas())
                         if( readyNodes.contains(replica) && client.isReady(replica , now) )
+                        {
+                            if(replica == leader)
+                                isLeaderDone = true;
                             counter++;
-                    if(counter == size)
+                        }
+
+                    // hsagar : See notes at isSuperMajorityAchieved
+                    int supermajority = (int) Math.ceil(0.75 * (N - 1) + 1);
+                    if(isLeaderDone && counter >= supermajority)
                     {
                         //All replicas in readyNodes
                         readyAvailNodes.add(leader);
@@ -595,16 +604,32 @@ public final class RecordAccumulator {
 
 
             PartitionInfo part = parts.get(drainIndex);
+            Node leader = part.leader();
             TopicPartition tp = new TopicPartition(part.topic(), part.partition());
 
             PartitionInfo infoForAll = cluster.partitionsByTopicPartition.get(tp);
+            int N = infoForAll.replicas().length;
+            HashSet<Node> superMajorityNodes = new HashSet<>();
             {
                 int counter = 0;
-                int size_len = infoForAll.replicas().length;
+                boolean isLeaderDone = false;
                 for (Node replica : infoForAll.replicas())
                     if (readyAllNodes.contains(replica))
+                    {
+                        if(replica == leader)
+                            isLeaderDone = true;
+                        superMajorityNodes.add(replica);
                         counter++;
-                if (counter < size_len)
+                    }
+
+                // hsagar : See notes at isSuperMajorityAchieved
+                int supermajority = (int) Math.ceil(0.75 * (N - 1) + 1);
+                if(isLeaderDone && counter >= supermajority)
+                {
+                    //Good Case
+                    //Use super majority nodes to crate batch
+                }
+                else  //if (counter < size_len)
                 {
                     this.drainIndex = (this.drainIndex + 1) % parts.size();
                     //Moving to next partition
@@ -679,6 +704,8 @@ public final class RecordAccumulator {
 
                         transactionManager.addInFlightBatch(batch);
                     }
+                    batch.mSuperMajorityNodes = superMajorityNodes;
+                    batch.setMinSuperMajorityCount(N);
                     batch.close();
                     size += batch.records().sizeInBytes();
                     ready.add(batch);
@@ -748,7 +775,7 @@ public final class RecordAccumulator {
     public void deallocate(ProducerBatch batch) {
         //log.info("hsagar deallocate Size" + batch.CMapSize() + " " + batch.CMapContents());
 
-        if(!batch.isSuperMajorityAchieved())
+        if(!batch.isSuperMajorityAcked())
             return;
         incomplete.remove(batch);
         // Only deallocate the batch if it is not a split batch because split batch are allocated outside the
