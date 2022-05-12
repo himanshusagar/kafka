@@ -20,7 +20,6 @@ package kafka.tools
 import java.nio.charset.StandardCharsets
 import java.time.Duration
 import java.util.{Arrays, Collections, Properties}
-
 import kafka.utils.Exit
 import org.apache.kafka.clients.admin.{Admin, NewTopic}
 import org.apache.kafka.clients.CommonClientConfigs
@@ -120,7 +119,11 @@ object EndToEndLatency {
       val begin = System.nanoTime
 
       //Send message (of random bytes) synchronously then immediately poll for it
-      producer.send(new ProducerRecord[Array[Byte], Array[Byte]](topic, message)).get()
+
+      val record: ProducerRecord[Array[Byte], Array[Byte]] = new ProducerRecord[Array[Byte], Array[Byte]](topic, message)
+      //producer.send( record, new ErrorLoggingCallback(record.topic, record.key, record.value, false))
+      producer.send(record, null)
+      //.get()
       val recordIter = consumer.poll(Duration.ofMillis(timeout)).iterator
 
       val elapsed = System.nanoTime - begin
