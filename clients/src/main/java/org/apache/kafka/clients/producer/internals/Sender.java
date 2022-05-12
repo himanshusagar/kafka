@@ -179,7 +179,7 @@ public class Sender implements Runnable {
         if (batches != null) {
             //log.info("hsagar maybeRemoveFromInflightBatches" + batch.CMapSize() + " " + batch.CMapContents());
 
-            if(batch.isSuperMajorityAcked())
+            if(batch.isProcessed)
             {
                 //log.info("hsagar maybeRemoveFromInflightBatches removing.." +  batches.isEmpty());
                 batches.remove(batch);
@@ -790,17 +790,21 @@ public class Sender implements Runnable {
 
         //log.info("hsagar  completeBatch Size:" + batch.CMapSize() + " -> " + batch.CMapContents() + " " + (transactionManager != null) + " " + batch.leaderDone + " " + batch.isEmptyCMap());
 
-        if (batch.isSuperMajorityAcked())
+        if (batch.isSuperMajorityAcked() && !batch.isProcessed)
         {
             if (transactionManager != null) {
 
                 transactionManager.handleCompletedBatch(batch, batch.leaderResponse);
             }
 
-            if (batch.complete(batch.leaderResponse.baseOffset, batch.leaderResponse.logAppendTime)) {
+            if (batch.complete(batch.leaderResponse.baseOffset, batch.leaderResponse.logAppendTime))
+            {
+                batch.isProcessed = true;
                 maybeRemoveAndDeallocateBatch(batch);
             }
         }
+//        else if(batch.isProcessed)
+//            maybeRemoveAndDeallocateBatch(batch);
     }
 
     private void failBatch(ProducerBatch batch,

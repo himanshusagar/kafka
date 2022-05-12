@@ -76,6 +76,8 @@ public final class ProducerBatch {
     private boolean retry;
     private boolean reopened;
     public boolean isLeaderDone;
+    public boolean isProcessed;
+
     private int mAcked;
     private int mMinSuperMajority;
 
@@ -91,7 +93,7 @@ public final class ProducerBatch {
 
     public void setMinSuperMajorityCount(int n)
     {
-        this.mMinSuperMajority = (int) Math.ceil(0.75 * (n - 1) + 1);;
+        this.mMinSuperMajority = (int) Math.ceil(0.75 * (double)(n - 1) + 1);;
     }
 
     public boolean removeFromCMap(Integer nodeId)
@@ -105,7 +107,7 @@ public final class ProducerBatch {
         //Can have 2F + 1 - (F + F/2 + 1) out standing nodes.
         // => F/2 nodes
         // => (N-1)/4 nodes
-        return  isLeaderDone && mAcked >= mMinSuperMajority;
+        return isLeaderDone && mAcked >= mMinSuperMajority;
     }
 
     public String CMapContents()
@@ -133,6 +135,7 @@ public final class ProducerBatch {
         this.mAcked = 0;
         this.mMinSuperMajority = 0;
         this.isLeaderDone = false;
+        this.isProcessed = false;
         float compressionRatioEstimation = CompressionRatioEstimator.estimation(topicPartition.topic(),
                                                                                 recordsBuilder.compressionType());
         recordsBuilder.setEstimatedCompressionRatio(compressionRatioEstimation);
