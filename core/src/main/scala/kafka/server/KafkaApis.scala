@@ -648,11 +648,11 @@ class KafkaApis(val requestChannel: RequestChannel,
         requestChannel.sendResponse(request, new ProduceResponse(mergedResponseStatus.asJava, maxThrottleTimeMs), None)
 
         val endTime = System.nanoTime
-        val duration = endTime - startTime
+        val duration = (endTime - startTime) / 1e6d
 
-        val fw = new FileWriter("/tmp/hsagar.txt", true)
+        val fw = new FileWriter("/tmp/hsagar_leader.txt", true)
         try {
-          fw.write( "hsagar Leader:handleProduceRequest : " + duration + "\n" )
+          fw.write( "hsagar,leader, " + duration + "\n" )
         }
         finally fw.close()
 
@@ -691,6 +691,9 @@ class KafkaApis(val requestChannel: RequestChannel,
    * Handle a fetch request
    */
   def handleFetchRequest(request: RequestChannel.Request): Unit = {
+    //hsagar
+    val startTime = System.nanoTime
+
     val versionId = request.header.apiVersion
     val clientId = request.header.clientId
     val fetchRequest = request.body[FetchRequest]
@@ -715,8 +718,7 @@ class KafkaApis(val requestChannel: RequestChannel,
     val interesting = mutable.ArrayBuffer[(TopicIdPartition, FetchRequest.PartitionData)]()
     if (fetchRequest.isFromFollower) {
 
-      //hsagar
-      val startTime = System.nanoTime
+
 
       // The follower must have ClusterAction on ClusterResource in order to fetch partition data.
       if (authHelper.authorize(request.context, CLUSTER_ACTION, CLUSTER, CLUSTER_NAME)) {
@@ -735,11 +737,11 @@ class KafkaApis(val requestChannel: RequestChannel,
       }
 
       val endTime = System.nanoTime
-      val duration = endTime - startTime
+      val duration = (endTime - startTime) / 1e6d
 
-      val fw = new FileWriter("/tmp/hsagar.txt", true)
+      val fw = new FileWriter("/tmp/hsagar_leader_fetch.txt", true)
       try {
-        fw.write( "hsagar Follower:handleFetchRequest: " + duration + "\n" )
+        fw.write( "hsagar,Leader_Fetch," + duration + "\n" )
       }
       finally fw.close()
 

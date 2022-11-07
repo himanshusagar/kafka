@@ -34,6 +34,7 @@ import org.apache.kafka.common.requests.OffsetsForLeaderEpochResponse.{UNDEFINED
 import org.apache.kafka.common.requests._
 import org.apache.kafka.common.{InvalidRecordException, TopicPartition, Uuid}
 
+import java.io.FileWriter
 import java.nio.ByteBuffer
 import java.util
 import java.util.Optional
@@ -304,6 +305,8 @@ abstract class AbstractFetcherThread(name: String,
     val divergingEndOffsets = mutable.Map.empty[TopicPartition, EpochEndOffset]
     var responseData: Map[TopicPartition, FetchData] = Map.empty
 
+    val startTime = System.nanoTime
+
     try {
       trace(s"Sending fetch request $fetchRequest")
       responseData = leader.fetch(fetchRequest)
@@ -335,6 +338,7 @@ abstract class AbstractFetcherThread(name: String,
                     val logAppendInfoOpt = processPartitionData(topicPartition, currentFetchState.fetchOffset,
                       partitionData)
 
+
                     logAppendInfoOpt.foreach { logAppendInfo =>
                       val validBytes = logAppendInfo.validBytes
                       val nextOffset = if (validBytes > 0) logAppendInfo.lastOffset + 1 else currentFetchState.fetchOffset
@@ -349,6 +353,16 @@ abstract class AbstractFetcherThread(name: String,
                           logAppendInfo.lastLeaderEpoch)
                         partitionStates.updateAndMoveToEnd(topicPartition, newFetchState)
                         fetcherStats.byteRate.mark(validBytes)
+
+                        val endTime = System.nanoTime
+                        val duration = (endTime - startTime) / 1e6d
+                        val fw = new FileWriter("/tmp/hsagar_follower.txt", true)
+                        try {
+                          fw.write( "hsagar,follower," + duration + "\n")
+                        }
+                        finally fw.close()
+
+
                       }
                     }
                     if (leader.isTruncationOnFetchSupported) {
@@ -360,6 +374,7 @@ abstract class AbstractFetcherThread(name: String,
                           .setEndOffset(divergingEpoch.endOffset)
                       }
                     }
+
                   } catch {
                     case ime@(_: CorruptRecordException | _: InvalidRecordException) =>
                       // we log the error and continue. This ensures two things

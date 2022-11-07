@@ -70,10 +70,10 @@ object ConsoleProducer {
       val startTime = System.nanoTime
       producer.send(record).get()
       val endTime = System.nanoTime
-      val duration = endTime - startTime
-      val fw = new FileWriter("/tmp/hsagar.txt", true)
+      val duration = (endTime - startTime) / 1e6d
+      val fw = new FileWriter("/tmp/hsagar_producer.txt", true)
       try {
-        fw.write( "hsagar producer:send e2e: " + duration + "\n")
+        fw.write( "hsagar,producer," + duration + "\n")
       }
       finally fw.close()
 
