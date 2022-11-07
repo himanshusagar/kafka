@@ -72,16 +72,17 @@ import org.apache.kafka.common.security.token.delegation.{DelegationToken, Token
 import org.apache.kafka.common.utils.{ProducerIdAndEpoch, Time}
 import org.apache.kafka.common.{Node, TopicIdPartition, TopicPartition, Uuid}
 import org.apache.kafka.server.authorizer._
+
 import java.lang.{Long => JLong}
 import java.nio.ByteBuffer
 import java.util
 import java.util.concurrent.ConcurrentHashMap
 import java.util.concurrent.atomic.AtomicInteger
 import java.util.{Collections, Optional}
-
 import org.apache.kafka.server.common.MetadataVersion
 import org.apache.kafka.server.common.MetadataVersion.{IBP_0_11_0_IV0, IBP_2_3_IV0}
 
+import java.io.FileWriter
 import scala.annotation.nowarn
 import scala.collection.{Map, Seq, Set, immutable, mutable}
 import scala.jdk.CollectionConverters._
@@ -541,6 +542,10 @@ class KafkaApis(val requestChannel: RequestChannel,
    * Handle a produce request
    */
   def handleProduceRequest(request: RequestChannel.Request, requestLocal: RequestLocal): Unit = {
+
+    //hsagar
+    val startTime = System.nanoTime
+
     val produceRequest = request.body[ProduceRequest]
     val requestSize = request.sizeInBytes
 
@@ -641,6 +646,16 @@ class KafkaApis(val requestChannel: RequestChannel,
         }
       } else {
         requestChannel.sendResponse(request, new ProduceResponse(mergedResponseStatus.asJava, maxThrottleTimeMs), None)
+
+        val endTime = System.nanoTime
+        val duration = endTime - startTime
+
+        val fw = new FileWriter("/tmp/hsagar.txt", true)
+        try {
+          fw.write( "hsagar Leader:handleProduceRequest : " + duration )
+        }
+        finally fw.close()
+
       }
     }
 
@@ -699,6 +714,10 @@ class KafkaApis(val requestChannel: RequestChannel,
     val erroneous = mutable.ArrayBuffer[(TopicIdPartition, FetchResponseData.PartitionData)]()
     val interesting = mutable.ArrayBuffer[(TopicIdPartition, FetchRequest.PartitionData)]()
     if (fetchRequest.isFromFollower) {
+
+      //hsagar
+      val startTime = System.nanoTime
+
       // The follower must have ClusterAction on ClusterResource in order to fetch partition data.
       if (authHelper.authorize(request.context, CLUSTER_ACTION, CLUSTER, CLUSTER_NAME)) {
         fetchContext.foreachPartition { (topicIdPartition, data) =>
@@ -714,6 +733,18 @@ class KafkaApis(val requestChannel: RequestChannel,
           erroneous += topicIdPartition -> FetchResponse.partitionResponse(topicIdPartition, Errors.TOPIC_AUTHORIZATION_FAILED)
         }
       }
+
+      val endTime = System.nanoTime
+      val duration = endTime - startTime
+
+      val fw = new FileWriter("/tmp/hsagar.txt", true)
+      try {
+        fw.write( "hsagar Follower:handleFetchRequest: " + duration )
+      }
+      finally fw.close()
+
+
+
     } else {
       // Regular Kafka consumers need READ permission on each partition they are fetching.
       val partitionDatas = new mutable.ArrayBuffer[(TopicIdPartition, FetchRequest.PartitionData)]

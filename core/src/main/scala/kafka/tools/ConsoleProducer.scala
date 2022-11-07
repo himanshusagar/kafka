@@ -64,8 +64,21 @@ object ConsoleProducer {
 
   private def send(producer: KafkaProducer[Array[Byte], Array[Byte]],
                          record: ProducerRecord[Array[Byte], Array[Byte]], sync: Boolean): Unit = {
-    if (sync)
+    if (true)
+    {
+      //hsagar
+      val startTime = System.nanoTime
       producer.send(record).get()
+      val endTime = System.nanoTime
+      val duration = endTime - startTime
+      val fw = new FileWriter("/tmp/hsagar.txt", true)
+      try {
+        fw.write( "hsagar producer:send e2e: " + duration )
+      }
+      finally fw.close()
+
+
+    }
     else
       producer.send(record, new ErrorLoggingCallback(record.topic, record.key, record.value, false))
   }
