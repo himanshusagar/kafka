@@ -652,7 +652,7 @@ class KafkaApis(val requestChannel: RequestChannel,
 
         val fw = new FileWriter("/tmp/hsagar.txt", true)
         try {
-          fw.write( "hsagar Leader:handleProduceRequest : " + duration )
+          fw.write( "hsagar Leader:handleProduceRequest : " + duration + "\n" )
         }
         finally fw.close()
 
@@ -739,7 +739,7 @@ class KafkaApis(val requestChannel: RequestChannel,
 
       val fw = new FileWriter("/tmp/hsagar.txt", true)
       try {
-        fw.write( "hsagar Follower:handleFetchRequest: " + duration )
+        fw.write( "hsagar Follower:handleFetchRequest: " + duration + "\n" )
       }
       finally fw.close()
 

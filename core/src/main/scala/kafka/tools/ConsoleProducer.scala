@@ -73,7 +73,7 @@ object ConsoleProducer {
       val duration = endTime - startTime
       val fw = new FileWriter("/tmp/hsagar.txt", true)
       try {
-        fw.write( "hsagar producer:send e2e: " + duration )
+        fw.write( "hsagar producer:send e2e: " + duration + "\n")
       }
       finally fw.close()
 
